@@ -1,6 +1,6 @@
 tools.AppLib = {
     constantes: {
-        API_BASE_URL: 'http://localhost:8080'
+        API_BASE_URL: 'http://localhost'
     },
     Entities: {
         Personne: function (data) {
@@ -41,6 +41,10 @@ tools.AppLib = {
             this.telephone = function () {
                 return this._getDataValue("telephone");
             }
+        },
+        Enseignement: function (data) {
+            tools.Library.Entity.call(this, data);
+
         }
     },
     ContainerProto: {
@@ -84,6 +88,14 @@ tools.AppLib = {
 
             this.fromContext = function (httpRequest, attribHTTP) {
                 this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/personnes.json", httpRequest, attribHTTP, null);
+            }
+        },
+        EnseignementManagers_AJAX: function (api, dao) {
+            tools.Library.Managers_api.call(this, api, dao);
+            this.table = "Enseignement";
+
+            this.getEnseignements = function (httpRequest, attribHTTP) {
+                this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/uds2026/ecamschool-regional-sync-client/uds-server/", httpRequest, attribHTTP, null);
             }
         }
     },
