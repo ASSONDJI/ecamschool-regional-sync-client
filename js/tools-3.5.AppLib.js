@@ -76,42 +76,109 @@ tools.AppLib = {
   },
   Models: {
     PersonneManagers_AJAX: function (api, dao) {
-        tools.Library.Managers_api.call(this, api, dao);
-        this.table = "Personne";
+      tools.Library.Managers_api.call(this, api, dao);
+      this.table = "Personne";
 
-        this.fromContext = function (httpRequest, attribHTTP) {
-            this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/personnes.json", httpRequest, attribHTTP, null);
-        }
+      this._requestFetchAll = function (url, httpRequest, attribHTTP, options) {
+        console.log("Chargement depuis:", url);
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => console.log("Personne:", data))
+          .catch((error) => console.error("Erreur Personne:", error));
+      };
+
+      this.fromContext = function (httpRequest, attribHTTP) {
+        this._requestFetchAll(
+          tools.AppLib.constantes.API_BASE_URL + "/personnes.json",
+          httpRequest,
+          attribHTTP,
+          null,
+        );
+      };
     },
-    
-    
+
     UsersManagers_AJAX: function (api, dao) {
-        tools.Library.Managers_api.call(this, api, dao);
-        this.table = "User";
+      tools.Library.Managers_api.call(this, api, dao);
+      this.table = "User";
 
-        this.fromContext = function (httpRequest, attribHTTP) {
-            this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/users", httpRequest, attribHTTP, null);
-        }
+      this._requestFetchAll = function (url, httpRequest, attribHTTP, options) {
+        console.log("Chargement depuis:", url);
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Utilisateurs charges:", data);
+            if (window.appMatrix) {
+              window.appMatrix.loadUsersToMatrice(data);
+            }
+          })
+          .catch((error) => console.error("Erreur utilisateurs:", error));
+      };
+
+      this.fromContext = function (httpRequest, attribHTTP) {
+        this._requestFetchAll(
+          tools.AppLib.constantes.API_BASE_URL + "/users",
+          httpRequest,
+          attribHTTP,
+          null,
+        );
+      };
     },
-    
+
     EstablishmentsManagers_AJAX: function (api, dao) {
-        tools.Library.Managers_api.call(this, api, dao);
-        this.table = "Establishment";
+      tools.Library.Managers_api.call(this, api, dao);
+      this.table = "Establishment";
 
-        this.fromContext = function (httpRequest, attribHTTP) {
-            this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/establishments", httpRequest, attribHTTP, null);
-        }
+      this._requestFetchAll = function (url, httpRequest, attribHTTP, options) {
+        console.log("Chargement depuis:", url);
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Etablissements charges:", data);
+            if (window.appMatrix) {
+              window.appMatrix.loadEstablishmentsToMatrice(data);
+            }
+          })
+          .catch((error) => console.error("Erreur etablissements:", error));
+      };
+
+      this.fromContext = function (httpRequest, attribHTTP) {
+        this._requestFetchAll(
+          tools.AppLib.constantes.API_BASE_URL + "/establishments",
+          httpRequest,
+          attribHTTP,
+          null,
+        );
+      };
     },
-    
-    DataMatrixManagers_AJAX: function (api, dao) {
-        tools.Library.Managers_api.call(this, api, dao);
-        this.table = "DataMatrix";
 
-        this.fromContext = function (httpRequest, attribHTTP) {
-            this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/data-matrix", httpRequest, attribHTTP, null);
-        }
-    }
-},
+    DataMatrixManagers_AJAX: function (api, dao) {
+      tools.Library.Managers_api.call(this, api, dao);
+      this.table = "DataMatrix";
+
+      this._requestFetchAll = function (url, httpRequest, attribHTTP, options) {
+        console.log("Chargement depuis:", url);
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Matrice chargee:", data);
+            if (window.appMatrix) {
+              window.appMatrix.loadDataMatrixToMatrice(data);
+              window.appMatrix.displayMatricePreview();
+            }
+          })
+          .catch((error) => console.error("Erreur matrice:", error));
+      };
+
+      this.fromContext = function (httpRequest, attribHTTP) {
+        this._requestFetchAll(
+          tools.AppLib.constantes.API_BASE_URL + "/data-matrix",
+          httpRequest,
+          attribHTTP,
+          null,
+        );
+      };
+    },
+  },
   EBackController: function (app, module, action) {
     tools.Library.BackController.call(this, app, module, action);
   },
