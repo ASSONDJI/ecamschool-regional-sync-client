@@ -45,6 +45,13 @@ tools.AppLib = {
         Enseignement: function (data) {
             tools.Library.Entity.call(this, data);
 
+            this.regime = function () {
+                return this._getDataValue("regime");
+            }
+        },
+        User: function (data) {
+            tools.Library.Entity.call(this, data);
+
         }
     },
     ContainerProto: {
@@ -96,6 +103,14 @@ tools.AppLib = {
 
             this.getEnseignements = function (httpRequest, attribHTTP) {
                 this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/uds2026/ecamschool-regional-sync-client/uds-server/", httpRequest, attribHTTP, null);
+            }
+        },
+        UserManagers_AJAX: function (api, dao) {
+            tools.Library.Managers_api.call(this, api, dao);
+            this.table = "User";
+
+            this.getUsers = function (httpRequest, attribHTTP) {
+                this._requestFetchAll(tools.AppLib.constantes.API_BASE_URL + "/users-lst", httpRequest, attribHTTP, null);
             }
         }
     },
