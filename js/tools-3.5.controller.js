@@ -70,7 +70,6 @@ tools.Applications.Frontend.Modules.Rh = {
                 matrice.setElement(a + b + c, "global", i);
             }
 
-
             // matrice.exportXSL("listing global rettraite");
             let dataConfigXslSchemes = [];
             let localites = matrice.getColsValuesGroupForColName("localite");
