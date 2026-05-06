@@ -1,3 +1,5 @@
+var tools = { Library: {} };
+module.exports = tools.Library.Stats;
 tools.Library.Stats = {
     Filter: {
         FILTER_TYPE_MIN: "MIN",
@@ -3801,3 +3803,4 @@ tools.Library.Stats = {
         }
     }
 }
+module.exports = tools.Library.Stats;
