@@ -1,31 +1,41 @@
 tools.AppLib = {
+
     constantes: {
-        API_BASE_URL: 'http://localhost:8080'
+        API_BASE_URL: 'http://localhost:8080',
+        JSON_ENSEIGNEMENTS: 'uds-server/enseignements.json'
     },
 
     Entities: {
+
         User: function (data) {
             tools.Library.Entity.call(this, data);
-
-            this.id = function () {
-                return this._getDataValue("id");
-            };
-
-            this.username = function () {
-                return this._getDataValue("username");
-            };
+            this.id = function () { return this._getDataValue("id"); };
+            this.username = function () { return this._getDataValue("username"); };
+            this.role = function () { return this._getDataValue("role"); };
+            this.fullName = function () { return this._getDataValue("fullName"); };
+            this.email = function () { return this._getDataValue("email"); };
         },
 
         Establishment: function (data) {
             tools.Library.Entity.call(this, data);
+            this.id = function () { return this._getDataValue("id"); };
+            this.name = function () { return this._getDataValue("name"); };
+            this.code = function () { return this._getDataValue("code"); };
+            this.city = function () { return this._getDataValue("city"); };
+            this.type = function () { return this._getDataValue("type"); };
+        },
 
-            this.id = function () {
-                return this._getDataValue("id");
-            };
-
-            this.name = function () {
-                return this._getDataValue("name");
-            };
+        Enseignement: function (data) {
+            tools.Library.Entity.call(this, data);
+            this.id = function () { return this._getDataValue("id"); };
+            this.idEnseignant = function () { return this._getDataValue("idEnseignant"); };
+            this.idDiscipline = function () { return this._getDataValue("idDiscipline"); };
+            this.idClasse = function () { return this._getDataValue("idClasse"); };
+            this.regime = function () { return this._getDataValue("regime"); };
+            this.nbreHeures = function () { return this._getDataValue("nbreHeures"); };
+            this.nbreHeuresTP = function () { return this._getDataValue("nbreHeuresTP"); };
+            this.anneeAcad = function () { return this._getDataValue("anneeAcad"); };
+            this.portee = function () { return this._getDataValue("portee"); };
         }
     },
 
@@ -39,67 +49,105 @@ tools.AppLib = {
         EstablishmentContainer: function (dao) {
             tools.Library.Container_mat.call(this, dao);
             this.table = "Establishment";
-        }
+        },
 
+        EnseignementContainer: function (dao) {
+            tools.Library.Container_mat.call(this, dao);
+            this.table = "Enseignement";
+        }
     },
 
     Models: {
 
+        // --------------------------------------------------
+        // UserManagers_AJAX
+        // Appel backend via _requestFetchAll (framework natif)
+        // --------------------------------------------------
         UserManagers_AJAX: function (api, dao) {
-
             tools.Library.Managers_api.call(this, api, dao);
-
             this.table = "User";
 
             this.getUsers = function (httpRequest, attribHTTP) {
-
                 const url = tools.AppLib.constantes.API_BASE_URL + "/users";
-
-                console.log("Appel API USERS:", url);
-
-                this._requestFetchAll(
-                    url,
-                    httpRequest,
-                    attribHTTP,
-                    null,
-                    []
-                );
+                console.log("[UserManagers_AJAX] getUsers →", url);
+                this._requestFetchAll(url, httpRequest, attribHTTP, null, []);
             };
         },
 
+        // --------------------------------------------------
+        // EstablishmentManagers_AJAX
+        // Appel backend via _requestFetchAll (framework natif)
+        // --------------------------------------------------
         EstablishmentManagers_AJAX: function (api, dao) {
-
             tools.Library.Managers_api.call(this, api, dao);
-
             this.table = "Establishment";
 
             this.getEstablishments = function (httpRequest, attribHTTP) {
-
                 const url = tools.AppLib.constantes.API_BASE_URL + "/establishments";
+                console.log("[EstablishmentManagers_AJAX] getEstablishments →", url);
+                this._requestFetchAll(url, httpRequest, attribHTTP, null, []);
+            };
+        },
 
-                console.log("Appel API ESTABLISHMENTS:", url);
+        // --------------------------------------------------
+        // EnseignementManagers_AJAX
+        // COMMENTÉ pour l'instant — on valide d'abord User
+        // et Establishment avec le backend, puis on branche
+        // Enseignement avec le fichier JSON local + SwRouter
+        // --------------------------------------------------
+        EnseignementManagers_AJAX: function (api, dao) {
+            tools.Library.Managers_api.call(this, api, dao);
+            this.table = "Enseignement";
 
-                this._requestFetchAll(
-                    url,
-                    httpRequest,
-                    attribHTTP,
-                    null,
-                    []
-                );
+            this.getEnseignements = function (httpRequest, attribHTTP) {
+
+                /*
+                // ── MODE PRODUCTION (backend) ──────────────────
+                const url = tools.AppLib.constantes.API_BASE_URL + "/enseignements";
+                this._requestFetchAll(url, httpRequest, attribHTTP, null, []);
+                */
+
+                // ── MODE TEST (fichier JSON local) ─────────────
+                let context = this;
+                let urlLocal = tools.AppLib.constantes.JSON_ENSEIGNEMENTS;
+                console.log("[EnseignementManagers_AJAX] lecture JSON local →", urlLocal);
+
+                $.getJSON(urlLocal, function (reponse) {
+                    console.log("[EnseignementManagers_AJAX]", reponse.length, "enseignements chargés");
+                    context.dao.updateTable(urlLocal, context.table, reponse, []);
+                    httpRequest.setAttribute(
+                        attribHTTP,
+                        context.dao.getElementsIndexUri(context.table, urlLocal)
+                    );
+                    httpRequest.chainActivate();
+
+                }).fail(function (jqXHR, textStatus, error) {
+                    console.error("[EnseignementManagers_AJAX] Erreur JSON :", error);
+                    alert("Impossible de charger enseignements.json : " + error);
+                });
             };
         }
-
     },
 
-    // IMPORTANT : EN DEHORS DE Models
     EBackController: function (app, module, action) {
+        tools.Library.BackController.call(this, app, module, action);
 
-        tools.Library.BackController.call(
-            this,
-            app,
-            module,
-            action
-        );
+        // --------------------------------------------------
+        // Exposer le DelegateComponent et le SwRouter
+        // globalement via tools.AppLib pour que app.js
+        // puisse y accéder sans connaître le framework.
+        //
+        // tools.AppLib.delegate  → point d'entrée pour
+        //   toute écriture (create, update, delete)
+        //   depuis les formulaires UI.
+        //
+        // tools.AppLib.swRouter  → accès au SyncManager
+        //   pour afficher le statut de synchronisation.
+        // --------------------------------------------------
+        tools.AppLib.delegate  = this.swRouter.delegate;
+        tools.AppLib.swRouter  = this.swRouter;
+
+        console.log("[EBackController] delegate et swRouter exposés dans tools.AppLib");
     }
 
 };

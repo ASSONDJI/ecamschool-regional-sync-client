@@ -8,95 +8,71 @@ tools.Applications.Frontend.Modules.Rh = {
                 let controller = httpRequest.getApp().getCurrentController();
                 let managers = controller.getManagers();
 
-                // Charger USERS depuis backend
+                // Backend → framework natif _requestFetchAll → $.ajax
                 managers.getManagerOf("User").getUsers(httpRequest, "users");
-
-                // Charger ESTABLISHMENTS depuis backend
                 managers.getManagerOf("Establishment").getEstablishments(httpRequest, "establishments");
-            }
 
+                managers.getManagerOf("Enseignement").getEnseignements(httpRequest, "enseignements");
+            }
         }
     },
 
     RhController: function (app, module, action) {
 
-        // Héritage du BackController
-        if (tools.AppLib && tools.AppLib.EBackController) {
-            tools.AppLib.EBackController.call(this, app, module, action);
-        } else {
-            console.error("EBackController introuvable");
-            return;
-        }
+        tools.AppLib.EBackController.call(this, app, module, action);
 
         this.executeIndex = function (httpRequest) {
 
             let users = httpRequest.getAttribute("users");
             let establishments = httpRequest.getAttribute("establishments");
+            let enseignements = httpRequest.getAttribute("enseignements");
 
-            console.log("===== USERS (JSON BACKEND) =====");
+            console.log("===== USERS =====");
             console.log(users);
 
-            console.log("===== ESTABLISHMENTS (JSON BACKEND) =====");
+            console.log("===== ESTABLISHMENTS =====");
             console.log(establishments);
 
-            // Vérification sécurité
-            if (!users || !establishments) {
+            if (!users || !establishments || !enseignements) {
+                console.warn("[RhController] Données manquantes.");
                 return;
             }
-            // =========================
-            // MATRICE USERS
-            // =========================
 
+            // Matrice Users
             let matriceUsers = new tools.Library.Stats.Matrice();
-
             for (let i = 0; i < users.length; i++) {
-
-                const user = users[i];
-
-                matriceUsers.setElement(
-                    user.getData().username,
-                    "username",
-                    i
-                );
-
-                matriceUsers.setElement(
-                    user.getData().role,
-                    "role",
-                    i
-                );
+                matriceUsers.setElement(users[i].getData().username, "username", i);
+                matriceUsers.setElement(users[i].getData().role, "role", i);
             }
-
             console.log("===== MATRICE USERS =====");
             console.log(matriceUsers);
 
-            // =========================
-            // MATRICE ESTABLISHMENTS
-            // =========================
-
+            // Matrice Establishments
             let matriceEstablishments = new tools.Library.Stats.Matrice();
-
             for (let i = 0; i < establishments.length; i++) {
-
-                const est = establishments[i];
-
-                matriceEstablishments.setElement(
-                    est.getData().name,
-                    "name",
-                    i
-                );
-
-                matriceEstablishments.setElement(
-                    est.getData().city,
-                    "city",
-                    i
-                );
+                matriceEstablishments.setElement(establishments[i].getData().name, "name", i);
+                matriceEstablishments.setElement(establishments[i].getData().city, "city", i);
             }
-
             console.log("===== MATRICE ESTABLISHMENTS =====");
             console.log(matriceEstablishments);
+
+            // Matrice Enseignements
+            console.log("===== ENSEIGNEMENTS =====");
+            console.log(enseignements);
+
+            let matriceEnseignements = new tools.Library.Stats.Matrice();
+            for (let i = 0; i < enseignements.length; i++) {
+                matriceEnseignements.setElement(enseignements[i].idEnseignant(), "idEnseignant", i);
+                matriceEnseignements.setElement(enseignements[i].idDiscipline(), "idDiscipline", i);
+                matriceEnseignements.setElement(enseignements[i].idClasse(), "idClasse", i);
+                matriceEnseignements.setElement(enseignements[i].regime(), "regime", i);
+                matriceEnseignements.setElement(enseignements[i].anneeAcad(), "anneeAcad", i);
+                matriceEnseignements.setElement(enseignements[i].portee(), "portee", i);
+            }
+            console.log("===== MATRICE ENSEIGNEMENTS =====");
+            console.log(matriceEnseignements);
         };
     },
 
     Views: {}
-
 };

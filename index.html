@@ -157,26 +157,54 @@
         </div>
 
         <div id="message" class="message"></div>
+        <div id="sync-badge"
+            style="display:none; background:#f59e0b; color:white; padding:8px 16px; border-radius:6px; margin:8px 0; font-size:14px; text-align:center;">
+            ⏳ données en attente de synchronisation
+        </div>
     </div>
-
+    <!-- ÉTAPE 1 : jQuery (déjà présent dans le projet) -->
     <script src="js/jquery.js"></script>
+
+    <!-- ÉTAPE 2 : Le framework de base (existant, inchangé) -->
     <script src="js/tools-3.5.js"></script>
-    <script src="js/tools-3.5.library.Container_mat.js"></script>
-    <script src="js/tools-3.5.library.DAOContainer.js"></script>
+
+    <!-- ÉTAPE 3 : Matrice et stats (existant, inchangé) -->
     <script src="js/tools-3.5.library.stats.matrice.js"></script>
+
+    <!-- ÉTAPE 4 : Container matrice (existant, inchangé) -->
+    <script src="js/tools-3.5.library.Container_mat.js"></script>
+
+    <!-- ÉTAPE 5 : DAOContainer (existant, inchangé) -->
     <script src="js/tools-3.5.library.DAOContainer.js"></script>
+
+    <script src="js/tools-3.5.library.IDBManager.js"></script>
+    <script src="js/tools-3.5.library.IDBManager.test.js"></script>
+
+    <!-- ÉTAPE 6 : ★ NOUVEAU — ProxyDAO -->
+    <!--           Doit venir APRÈS DAOContainer -->
+    <script src="js/tools-3.5.library.ProxyDAO.js"></script>
+
+    <script src="js/tools-3.5.library.SyncManager.js"></script>
+
+    <!-- ÉTAPE 7 : ★ NOUVEAU — SwRouter -->
+    <!--           Doit venir APRÈS ProxyDAO -->
+    <script src="js/tools-3.5.library.SwRouter.js"></script>
+
+    <!-- ÉTAPE 8 : AppLib (existant, avec ajout Enseignement) -->
     <script src="js/tools-3.5.AppLib.js"></script>
+
+    <!-- ÉTAPE 9 : Controller (existant, inchangé) -->
     <script src="js/tools-3.5.controller.js"></script>
+
+    <!-- ÉTAPE 10 : Démarrage de l'application -->
+     <script src="js/app.js"></script>
     <script>
-        $(window).load(function () {
+        $(document).ready(function () {
             let app = new tools.Applications.Frontend.FrontendApplication();
             app.run();
         });
-        console.log("plays");
-
     </script>
 
-    <script src="js/app.js"></script>
 
 </body>
 

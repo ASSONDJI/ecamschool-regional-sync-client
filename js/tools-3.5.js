@@ -230,7 +230,6 @@ let tools = {
 
             this.getContainerOf = function (model) {
                 let namespace = tools.AppLib.Container;
-                // console.log(model);
                 return new namespace[model + "Container"](this.dao);
             }
         },
@@ -239,18 +238,47 @@ let tools = {
             this.table;
             this.listenerHttpRequest = [];
 
-            this._requestFetchAll = function (request, httpRequest, attribRequest, dataFilter, dataKeysCols = []) {
-                if (this.dao.uriExist(request)) {
+            // SwRouter — composé dans Managers_api (relation ◆)
+            // Managers_api contient SwRouter car c'est elle
+            // qui appelle _requestFetchAll
+            this.swRouter = null;
 
+            this.proxy = function () {
+                return this.swRouter;
+            };
+
+            this.setSwRouter = function (swRouter) {
+                this.swRouter = swRouter;
+                console.log("[Managers_api] SwRouter injecté dans", this.table);
+            };
+            this._requestFetchAll = function (request, httpRequest, attribRequest, dataFilter, dataKeysCols = []) {
+
+            // Si un SwRouter est disponible → on lui délègue
+            // (il choisira AJAX ou IndexedDB selon le réseau)
+            if (this.swRouter !== null) {
+
+                console.log("[Managers_api] Délégation au SwRouter pour :", request);
+                this.swRouter.route(
+                    request,
+                    this.table,
+                    httpRequest,
+                    attribRequest,
+                    dataFilter,
+                    dataKeysCols
+                );
+
+            } else {
+
+                // Comportement EXISTANT conservé si pas de SwRouter
+                // (rétro-compatibilité garantie)
+                if (this.dao.uriExist(request)) {
                     httpRequest.setAttribute(attribRequest, this.dao.getElementsIndexUri(this.table, request));
                     httpRequest.chainActivate();
-
                 } else {
-
                     this._requestFetchAllAJAX(request, httpRequest, attribRequest, dataFilter, dataKeysCols);
-
                 }
             }
+        };
 
             this._requestFetchAllAJAX = function (request, httpRequest, attribRequest, dataFilter, dataKeysCols = []) {
                 this.listenerHttpRequest[attribRequest] = httpRequest;
@@ -517,6 +545,18 @@ let tools = {
 
             this.managers = new tools.Library.Managers("AJAX", new tools.Library.DAOContainer());
             // this.container = new tools.Library.Container(dao);
+            this.swRouter = new tools.Library.SwRouter(
+            new tools.Library.DAOContainer(),
+            ["Enseignement", "User", "Establishment"]
+            // ↑ Ajouter ici les autres tables si nécessaire
+        );
+
+        // Injecter le SwRouter dans le gestionnaire de managers
+        // pour qu'il soit disponible pour tous les Managers_api
+        this.getSwRouterInstance = function () {
+            return this.swRouter;
+        };
+
 
             this.page = new tools.Library.Page(app);
             this.module = module;
