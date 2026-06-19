@@ -15,7 +15,8 @@ describe('exportXSLBySheetGroupSum Tests', () => {
 
     m.getConfigGroupExportSchemes = jest.fn(() => 'FINAL_CONFIG');
 
-    // mock XLSX (sécurité)
+    m.exportFileXSL = jest.fn(); // ← mock manquant qui causait le timeout de 48s
+
     global.XLSX = {
       utils: {
         book_new: jest.fn(() => ({
@@ -40,6 +41,7 @@ describe('exportXSLBySheetGroupSum Tests', () => {
     );
 
     expect(m.getConfigGroupExportSchemes).toHaveBeenCalled();
+    expect(m.exportFileXSL).toHaveBeenCalled(); // ← vérifie que l'export est bien déclenché
     expect(result).toBe('FINAL_CONFIG');
 
   });

@@ -1376,9 +1376,11 @@ tools.Library.Stats = {
                 return resume;
             }, 'FIN GLOBAL');
             this.exportFileXSL(dataConfigXsl, fileNameExport);
+            return dataConfigXsl;
         }
 
         this.exportGroupValuesCols = function (colsNames, title = "recap vals groups") {
+            
             let
                 maxLength = 0,
                 content = [];
