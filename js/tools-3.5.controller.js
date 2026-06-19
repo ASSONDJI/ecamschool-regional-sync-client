@@ -1,4 +1,4 @@
-tools.Applications.Frontend.Modules.Rh = {
+ tools.Applications.Frontend.Modules.Rh = {
     DataLoad: {
         ActionIndex: {
             loadTest: function (httpResquest) {
