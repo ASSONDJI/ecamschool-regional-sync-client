@@ -12,9 +12,9 @@ tools.Applications.Frontend.Modules.Rh = {
         }
     },
     RhController: function (app, module, action) {
-        tools.AppLib.EBackController.call(this, app, module, action);
+        tools.Library.BackController.call(this, app, module, action);
 
-        this.executeIndex = function (httpRequest) {
+        this.executeIndex2 = function (httpRequest) {
             let enseignements = httpRequest.getAttribute("enseignements");
             // let users = httpRequest.getAttribute("users");
             // Instance de la matrice de représentation des données
@@ -38,86 +38,87 @@ tools.Applications.Frontend.Modules.Rh = {
 
         }
 
-        this.executeExportEtsDDESEff = function (httpRequest) {
-            var
-                etablissements = httpRequest.getAttribute("etablissements"),
-                matrice = new tools.Library.Stats.Matrice();
-            // controller.processExportListPersonnelDDES(httpRequest);
-            etablissements.sort(function (a, b) {
-                if (a.nom() < b.nom()) { return -1; }
-                if (a.nom() > b.nom()) { return 1; }
-                return 0;
+        this.executeIndex3 = function (httpRequest) {
+            // let users = httpRequest.getAttribute("users");
+            // Instance de la matrice de représentation des données
+            let langue1 = this.managers.getManagerOf("Enseignement").getUnique(1);
+            // let langue1 = this.managersInDB.getManagerOf("Enseignement").getUnique(1);
+        }
+
+        this.executeIndex = function (httpRequest) {
+            let
+                matriceContent = this.getManagers().getManagerOf("Enseignement").matriceContent(),
+                // matriceContent = this.getManagers().getManagerOf("Enseignant").getContainer().getJoinPersonnes(),
+                colonnesShow = [
+                    "id", "idEnseignant", "idDiscipline", "idClasse", "regime", "anneeAcad", "portee"
+                ];
+
+            this.page.views().initShowTableHeader(colonnesShow);
+            matriceContent.applyColonneMapCell("id", function (cellContent) {
+                let content = '<a target="_blanck" href="/dres/disciplines/' + cellContent + 'copy/" class="btn btn-inverse btn-default btn-xs">clone</a>';
+                content += '<a target="_blanck" href="/dres/disciplines/modify' + cellContent + '/" class="btn btn-inverse btn-warning btn-xs">update</a>';
+                return content;
             });
 
-            let colsNames = ["global", "solvable", "insolvable", "cas_sociaux"];
-            let colsNamesEts = ["nom", "global", "solvable", "insolvable", "cas_sociaux"];
+            let dataTable = new tools.AppLib.Utilitary.DataTableContainer(matriceContent);
+            // console.log(matriceContent);
+            dataTable.setColonnes(colonnesShow);
+            dataTable
+                // .addSearchForm(tools.AppLib.constantes.DataTableContainerSearchForm.DATE, "datePriseDeFonctionFP", "date Prise De Fonction A La FP")
+                .addSearchFormSelect("idEnseignant", matriceContent.getColsValuesGroupForColName("idEnseignant"))
+                .addSearchFormSelect("idDiscipline", matriceContent.getColsValuesGroupForColName("idDiscipline"))
+                .addSearchFormSelect("idClasse", matriceContent.getColsValuesGroupForColName("idClasse"))
+                .addSearchFormSelect("regime", matriceContent.getColsValuesGroupForColName("regime"))
+                .addSearchFormSelect("anneeAcad", matriceContent.getColsValuesGroupForColName("anneeAcad"))
+                .addSearchFormSelect("portee", matriceContent.getColsValuesGroupForColName("portee"));
 
-            for (let i = 0; i < etablissements.length; i++) {
-                const
-                    ets = etablissements[i],
-                    a = ets.getDescription("effectifs")["solvable"],
-                    b = ets.getDescription("effectifs")["insolvable"],
-                    c = ets.getDescription("effectifs")["cas_sociaux"];
-
-                matrice.setElement(ets.nom(), "nom", i);
-                matrice.setElement(ets.cycle(), "cycle", i);
-                matrice.setElement(ets.structure(), "structure", i);
-                matrice.setElement(ets.localite(), "localite", i);
-
-                matrice.setElement(a, "solvable", i);
-                matrice.setElement(b, "insolvable", i);
-                matrice.setElement(c, "cas_sociaux", i);
-                matrice.setElement(a + b + c, "global", i);
-            }
-
-            // matrice.exportXSL("listing global rettraite");
-            let dataConfigXslSchemes = [];
-            let localites = matrice.getColsValuesGroupForColName("localite");
-            // console.log(enseignements);
-            for (const key in localites) {
-                if (Object.hasOwnProperty.call(localites, key)) {
-                    const localite = localites[key];
-                    // console.log(matiere);
-                    const dataConfigXslLocal = {
-                        "config": {
-                            "validators": {
-                                "localite": [
-                                    function (val) {
-                                        return val == localite;
-                                    }
-                                ]
-                            },
-                            "accumulator": function (nbre, somme) {
-                                if (somme == null) {
-                                    return nbre;
-                                }
-
-                                if (nbre == null) {
-                                    return somme;
-                                }
-
-                                return nbre + somme;
-                            },
-                            "label": "SYNTH LOCALITE : " + localite
-                        },
-                        "colonnesShow": colsNamesEts,
-                        "colonnesResume": colsNames,
-                        "title": "data synth : " + localite
-                    };
-
-                    dataConfigXslSchemes = dataConfigXslSchemes.concat(dataConfigXslLocal);
-                }
-            }
-
-            // console.log(dataConfigXslSchemes);
-            let dataConfigXsl = matrice.getConfigGroupExportSchemes(dataConfigXslSchemes, function (resume, result) {
-                // console.log(resume);
-                return resume;
-            }, 'FIN GLOBAL');
-            matrice.exportFileXSL(dataConfigXsl, "general effectif");
+            let dt = dataTable.config();
+            // this.configShowViewSearchColumnTable(dt);
+            this.page.views().showViewTableConfig(dt, colonnesShow, this.page.views());
         }
 
     },
     Views: {
+        initShowTableHeader: function (colonnes) {
+            let result = "<tr>";
+
+            for (let i = 0; i < colonnes.length; i++) {
+                result += "<th>" + colonnes[i] + "</th>";
+            }
+
+            result += "</tr>";
+            $("#example thead").html(result);
+        },
+        showViewTableConfig: function (dt, names, views) {
+            // let names = dt.settings().init().columns;
+            let result = "";
+            for (const key in names) {
+                if (Object.hasOwnProperty.call(names, key)) {
+                    const name = names[key];
+                    result += '<button class="btn btn-inverse btn-default btn-xs btn-view-header-table" index="' + key + '">' + name + '</button>';
+                    // result += '<button class="btn btn-inverse btn-default btn-xs btn-view-header-table" index="' + key + '">' + name.title + '</button>';
+                }
+            }
+
+            $("#show-buttons-config").html(result);
+            views.showHideTableHeader(dt, ".btn-view-header-table");
+        },
+        showHideTableHeader: function (dt, cible) {
+            $(cible).click(function (e) {
+                e.preventDefault();
+                let index = parseInt($(this).attr("index"));
+                // console.log(dt.columns([index]));
+                if ($(this).hasClass("btn-success")) {
+                    dt.columns([index]).visible(true);
+                } else {
+                    dt.columns([index]).visible(false);
+                    // dt.columns([index]).searchable(false);
+                }
+
+
+                $(this).toggleClass('btn-default');
+                $(this).toggleClass('btn-success');
+            });
+        }
     }
 }

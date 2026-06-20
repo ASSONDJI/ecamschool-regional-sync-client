@@ -60,6 +60,11 @@ tools.Library.DAOContainer = function () {
         return this.getListTableData(table).getElementsLigneMapInIndex(index);
     }
 
+    this.getElementRow = function (table, element) {
+        let index = this.getListTableData(table).getLigneIndex(element);
+        return this.getListTableData(table).getElementsLigneMapInIndex(index);
+    }
+
     this.getElementsIndexUri = function (table, uri) {
         let result = [];
         // console.log(this.tableHeader);

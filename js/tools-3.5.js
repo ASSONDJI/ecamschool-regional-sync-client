@@ -222,7 +222,7 @@ let tools = {
 
             this.getManagerOf = function (model) {
                 const namespace = tools.AppLib.Models;
-                return new namespace[model + "Managers_AJAX"](this.api, this.dao);
+                return new namespace[model + "Managers_" + this.api](this.api, this.dao);
             }
         },
         Container: function (dao) {
@@ -236,6 +236,18 @@ let tools = {
         },
         Managers_api: function (api, dao) {
             tools.Library.Managers.call(this, api, dao);
+
+            this.save = function (uri, data, httpRequest) {
+            }
+
+            this.addListenerRequest = function (httpRequest) {
+            }
+
+            this.getUnique = function (id) {
+            }
+        },
+        Managers_AJAX: function (api, dao) {
+            tools.Library.Managers_api.call(this, api, dao);
             this.table;
             this.listenerHttpRequest = [];
 
@@ -329,6 +341,30 @@ let tools = {
 
             this.getContainer = function () {
                 return this.dao.getContainer().getContainerOf(this.table);
+            }
+
+            this.getUnique = function (id) {
+                // console.log(id);
+                // console.log(this.dao.getElementRow(this.table, id));
+                let elements = this.dao.getElementRow(this.table, id);
+                return new tools.AppLib.Entities[this.table](elements);
+            }
+
+            this.matriceContent = function () {
+                // console.log(id);
+                return this.dao.getListTableData(this.table);
+            }
+        },
+        Managers_InDB: function (api, dao) {
+            tools.Library.Managers_api.call(this, api, dao);
+
+            this.save = function (uri, data, httpRequest) {
+            }
+
+            this.addListenerRequest = function (httpRequest) {
+            }
+
+            this.getUnique = function (id) {
             }
         },
         _$$DAOContainerData: {
@@ -432,6 +468,14 @@ let tools = {
                 return this.currentController;
             }
 
+            this.getCurrentRoute = function () {
+                return this.currentRoute;
+            }
+
+            this.getName = function () {
+                return this.name;
+            }
+
             this.moduleActionLoadData = function () {
                 // console.log(this.currentRoute);
                 let
@@ -516,6 +560,7 @@ let tools = {
             tools.Library.AppComponent.call(this, app);
 
             this.managers = new tools.Library.Managers("AJAX", new tools.Library.DAOContainer());
+            this.managersInDB = new tools.Library.Managers("InDB", null);
             // this.container = new tools.Library.Container(dao);
 
             this.page = new tools.Library.Page(app);
@@ -661,6 +706,13 @@ let tools = {
                 return result;
             }
 
+            this.views = function () {
+                // this.currentRoute = matchedRoute;
+                this.app.httpRequest.setAttributes(this.app.getCurrentRoute().getVars());
+                // console.log(tools.Applications[this.name].Modules[matchedRoute.getModule()]);
+                return tools.Applications[this.app.getName()].Modules[this.app.getCurrentRoute().getModule()]["Views"];
+                // console.log(classController);
+            }
         },
         Knowledge: {
             MatriceLearn: function (matrice, knowledge) {
