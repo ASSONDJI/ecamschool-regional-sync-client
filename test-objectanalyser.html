@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test ObjectAnalyser - E-Camschool</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f7fa;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #2c3e50;
+      }
+      .card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .card h3 {
+        margin-top: 0;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+      }
+      .success {
+        color: #27ae60;
+        font-weight: bold;
+      }
+      .error {
+        color: #e74c3c;
+        font-weight: bold;
+      }
+      .info {
+        color: #2980b9;
+        font-weight: bold;
+      }
+      pre {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        font-size: 13px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .badge-success {
+        background: #27ae60;
+        color: white;
+      }
+      .badge-info {
+        background: #2980b9;
+        color: white;
+      }
+      .badge-warning {
+        background: #f39c12;
+        color: white;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+      }
+      table th,
+      table td {
+        border: 1px solid #ddd;
+        padding: 8px 12px;
+        text-align: left;
+      }
+      table th {
+        background: #3498db;
+        color: white;
+      }
+      table tr:nth-child(even) {
+        background: #f9f9f9;
+      }
+      .log-area {
+        background: #1a1a2e;
+        color: #00ff88;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #ecf0f1;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db, #2ecc71);
+        width: 0%;
+        transition: width 0.3s;
+        border-radius: 10px;
+      }
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+      .btn-primary {
+        background: #3498db;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2980b9;
+      }
+      .btn-success {
+        background: #27ae60;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #219a52;
+      }
+      .btn-danger {
+        background: #e74c3c;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Test ObjectAnalyser & Random Forest</h1>
+    <p>Vérification du bon fonctionnement des nouvelles fonctionnalités</p>
+
+    <!-- Boutons de contrôle -->
+    <div class="card">
+      <h3>🎮 Contrôle des tests</h3>
+      <button class="btn btn-primary" onclick="runAllTests()">
+        ▶️ Lancer tous les tests
+      </button>
+      <button class="btn btn-success" onclick="runTest1()">
+        1. Créer Matrice
+      </button>
+      <button class="btn btn-info" onclick="runTest2()">
+        2. Configurer RandomForest
+      </button>
+      <button class="btn btn-info" onclick="runTest3()">
+        3. Entraîner le modèle
+      </button>
+      <button class="btn btn-info" onclick="runTest4()">
+        4. Transformer en arbre
+      </button>
+      <button class="btn btn-info" onclick="runTest5()">
+        5. Faire une prédiction
+      </button>
+      <button class="btn btn-info" onclick="runTest6()">
+        6. Changer de modèle
+      </button>
+      <button class="btn btn-danger" onclick="clearLogs()">
+        🧹 Effacer les logs
+      </button>
+    </div>
+
+    <!-- Zone de logs -->
+    <div class="card">
+      <h3>📋 Journal d'exécution</h3>
+      <div id="logArea" class="log-area">📌 En attente des tests...</div>
+    </div>
+
+    <!-- Résultats des tests -->
+    <div class="card">
+      <h3>📊 Résultats des tests</h3>
+      <div id="resultsArea">
+        <p>Aucun test exécuté pour le moment.</p>
+      </div>
+    </div>
+
+    <!-- État des données -->
+    <div class="card">
+      <h3>📦 État des données</h3>
+      <div id="dataState">
+        <p><span class="info">Matrice :</span> Non créée</p>
+        <p><span class="info">Modèle :</span> Non configuré</p>
+        <p><span class="info">Analyseur :</span> Non configuré</p>
+        <p><span class="info">Entraîné :</span> Non</p>
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Matrice affichée -->
+    <div class="card">
+      <h3>📋 Matrice de données</h3>
+      <div id="matrixDisplay">
+        <p>Aucune donnée chargée.</p>
+      </div>
+    </div>
+
+    <!-- Arbre affiché -->
+    <div class="card">
+      <h3>🌳 Arbre généré</h3>
+      <div id="treeDisplay">
+        <p>Aucun arbre généré.</p>
+      </div>
+    </div>
+
+    <!-- Prédictions -->
+    <div class="card">
+      <h3>🔮 Prédictions</h3>
+      <div id="predictionDisplay">
+        <p>Aucune prédiction effectuée.</p>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- CHARGEMENT DES SCRIPTS -->
+    <!-- ============================================================ -->
+
+    <!-- 1. Charger les bibliothèques existantes -->
+    <script src="js/tools-3.5.js"></script>
+    <script src="js/tools-3.5.library.stats.matrice.js"></script>
+
+    <!-- 2. Charger les nouveaux modules -->
+    <script src="js/tools-3.5.library.Analyser.js"></script>
+    <script src="js/tools-3.5.library.Tree.js"></script>
+    <script src="js/tools-3.5.library.RandomForest.js"></script>
+    <script src="js/tools-3.5.library.ObjectAnalyser.js"></script>
+    <script src="js/tools-3.5.library.MatriceExtension.js"></script>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPT DE TEST -->
+    <!-- ============================================================ -->
+
+    <script>
+      // ============================================================
+      // VARIABLES GLOBALES DE TEST
+      // ============================================================
+
+      var testMatrice = null;
+      var testAnalyser = null;
+      var testRandomForest = null;
+      var testTree = null;
+      var testPredictions = [];
+      var logs = [];
+      var testResults = [];
+
+      // ============================================================
+      // FONCTIONS UTILITAIRES
+      // ============================================================
+
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix =
+          {
+            info: "ℹ️",
+            success: "✅",
+            error: "❌",
+            warning: "⚠️",
+            debug: "🐛",
+          }[type] || "📌";
+
+        logs.push({ timestamp, message, type });
+
+        const logArea = document.getElementById("logArea");
+        const entry = `[${timestamp}] ${prefix} ${message}\n`;
+        logArea.textContent += entry;
+        logArea.scrollTop = logArea.scrollHeight;
+
+        updateProgress();
+      }
+
+      function clearLogs() {
+        logs = [];
+        document.getElementById("logArea").textContent = " Logs effacés.";
+        document.getElementById("resultsArea").innerHTML =
+          "<p>Aucun résultat affiché.</p>";
+      }
+
+      function updateProgress() {
+        const total = 6; // 6 tests
+        const done = testResults.length;
+        const percent = Math.min((done / total) * 100, 100);
+        document.getElementById("progressFill").style.width = percent + "%";
+      }
+
+      function displayMatrix(matrice) {
+        const container = document.getElementById("matrixDisplay");
+        if (!matrice) {
+          container.innerHTML = "<p>Aucune donnée chargée.</p>";
+          return;
+        }
+
+        const rows = matrice.getLignes();
+        const cols = matrice.getColonnes();
+
+        if (rows.length === 0 || cols.length === 0) {
+          container.innerHTML = "<p>Matrice vide.</p>";
+          return;
+        }
+
+        let html = "<table><thead><tr><th>Ligne \\ Colonne</th>";
+        for (let i = 0; i < cols.length; i++) {
+          html += `<th>${cols[i]}</th>`;
+        }
+        html += "</tr></thead><tbody>";
+
+        for (let i = 0; i < rows.length; i++) {
+          html += `<tr><td><strong>${rows[i]}</strong></td>`;
+          for (let j = 0; j < cols.length; j++) {
+            const val = matrice.getElement(cols[j], rows[i]);
+            html += `<td>${val !== null && val !== undefined ? val : "-"}</td>`;
+          }
+          html += "</tr>";
+        }
+
+        html += "</tbody></table>";
+        container.innerHTML = html;
+      }
+
+      function displayTree(tree) {
+        const container = document.getElementById("treeDisplay");
+        if (!tree) {
+          container.innerHTML = "<p>Aucun arbre généré.</p>";
+          return;
+        }
+
+        // Utiliser la méthode toString() de Tree
+        try {
+          const str = tree.toString();
+          container.innerHTML = `<pre style="background:#1a1a2e;color:#00ff88;padding:15px;border-radius:5px;font-family:'Courier New',monospace;font-size:12px;white-space:pre-wrap;">${str}</pre>`;
+        } catch (e) {
+          container.innerHTML = `<p>Erreur d'affichage : ${e.message}</p>`;
+        }
+      }
+
+      function displayPredictions(predictions) {
+        const container = document.getElementById("predictionDisplay");
+        if (!predictions || predictions.length === 0) {
+          container.innerHTML = "<p>Aucune prédiction effectuée.</p>";
+          return;
+        }
+
+        let html =
+          "<table><thead><tr><th>#</th><th>Entrée</th><th>Sortie</th></tr></thead><tbody>";
+        for (let i = 0; i < predictions.length; i++) {
+          const p = predictions[i];
+          html += `<tr>
+                    <td>${i + 1}</td>
+                    <td><pre style="margin:0;font-size:11px;">${JSON.stringify(p.input, null, 2)}</pre></td>
+                    <td><pre style="margin:0;font-size:11px;color:#27ae60;">${JSON.stringify(p.output, null, 2)}</pre></td>
+                </tr>`;
+        }
+        html += "</tbody></table>";
+        container.innerHTML = html;
+      }
+
+      function updateDataState(state) {
+        const container = document.getElementById("dataState");
+        container.innerHTML = `
+                <p><span class="info">Matrice :</span> ${state.hasMatrice ? " Créée" : " Non créée"}</p>
+                <p><span class="info">Modèle :</span> ${state.hasModel ? " Configuré" : " Non configuré"}</p>
+                <p><span class="info">Analyseur :</span> ${state.hasAnalyser ? " Configuré" : " Non configuré"}</p>
+                <p><span class="info">Entraîné :</span> ${state.isTrained ? " Oui" : " Non"}</p>
+                <p><span class="info">Arbres :</span> ${state.nTrees || 0}</p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: ${state.progress || 0}%;"></div>
+                </div>
+            `;
+      }
+
+      function addTestResult(name, status, message) {
+        testResults.push({ name, status, message });
+        const container = document.getElementById("resultsArea");
+
+        let html = "";
+        for (let i = 0; i < testResults.length; i++) {
+          const r = testResults[i];
+          const icon =
+            r.status === "success" ? "" : r.status === "error" ? "" : "";
+          html += `<p>${icon} <strong>${r.name}</strong> : ${r.message}</p>`;
+        }
+        container.innerHTML = html;
+      }
+
+      // ============================================================
+      // TESTS INDIVIDUELS
+      // ============================================================
+
+      /**
+       * TEST 1 : Création de la matrice
+       */
+      function runTest1() {
+        log("=== TEST 1 : Création de la matrice ===", "info");
+
+        try {
+          // Créer une matrice
+          testMatrice = new tools.Library.Stats.Matrice();
+
+          // Définir les colonnes
+          testMatrice.setColonnes([
+            "id",
+            "idEnseignant",
+            "idDiscipline",
+            "idClasse",
+            "regime",
+          ]);
+
+          // Ajouter des données d'exemple (basées sur l'image de l'énoncé)
+          const data = [
+            {
+              id: 1,
+              idEnseignant: 26848,
+              idDiscipline: 1343,
+              idClasse: "CLASSE A",
+              regime: "Francophone",
+            },
+            {
+              id: 2,
+              idEnseignant: 28158,
+              idDiscipline: 1345,
+              idClasse: "CLASSE B",
+              regime: "Francophone",
+            },
+            {
+              id: 3,
+              idEnseignant: 28177,
+              idDiscipline: 1345,
+              idClasse: "CLASSE C",
+              regime: "Francophone",
+            },
+            {
+              id: 4,
+              idEnseignant: 28155,
+              idDiscipline: 1347,
+              idClasse: "CLASSE A",
+              regime: "Francophone",
+            },
+            {
+              id: 5,
+              idEnseignant: 26585,
+              idDiscipline: 2024,
+              idClasse: "CLASSE D",
+              regime: "Francophone",
+            },
+            {
+              id: 6,
+              idEnseignant: 27131,
+              idDiscipline: 2024,
+              idClasse: "CLASSE E",
+              regime: "Francophone",
+            },
+            {
+              id: 7,
+              idEnseignant: 27119,
+              idDiscipline: 2024,
+              idClasse: "CLASSE F",
+              regime: "Francophone",
+            },
+            {
+              id: 8,
+              idEnseignant: 27111,
+              idDiscipline: 2024,
+              idClasse: "CLASSE G",
+              regime: "Francophone",
+            },
+            {
+              id: 9,
+              idEnseignant: 27118,
+              idDiscipline: 2024,
+              idClasse: "CLASSE H",
+              regime: "Francophone",
+            },
+            {
+              id: 10,
+              idEnseignant: 27127,
+              idDiscipline: 2024,
+              idClasse: "CLASSE I",
+              regime: "Francophone",
+            },
+          ];
+
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            const rowId = row.id.toString();
+            testMatrice.setElement(row.idEnseignant, "idEnseignant", rowId);
+            testMatrice.setElement(row.idDiscipline, "idDiscipline", rowId);
+            testMatrice.setElement(row.idClasse, "idClasse", rowId);
+            testMatrice.setElement(row.regime, "regime", rowId);
+            testMatrice.setElement(row.id, "id", rowId);
+          }
+
+          log(
+            " Matrice créée avec " +
+              data.length +
+              " lignes et " +
+              testMatrice.getColonnes().length +
+              " colonnes",
+            "success",
+          );
+
+          // Afficher la matrice
+          displayMatrix(testMatrice);
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: false,
+            hasAnalyser: false,
+            isTrained: false,
+            nTrees: 0,
+            progress: 16,
+          });
+
+          addTestResult(
+            "Création de la matrice",
+            "success",
+            data.length + " lignes chargées",
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult("Création de la matrice", "error", error.message);
+          return false;
+        }
+      }
+
+      /**
+       * TEST 2 : Configuration du Random Forest
+       */
+      function runTest2() {
+        log("=== TEST 2 : Configuration du Random Forest ===", "info");
+
+        try {
+          if (!testMatrice) {
+            throw new Error(
+              "La matrice n'a pas été créée. Lancez le test 1 d'abord.",
+            );
+          }
+
+          // Créer le Random Forest
+          testRandomForest = new tools.Library.RandomForest();
+
+          // Configurer
+          testRandomForest.configure({
+            nTrees: 5,
+            featureCols: ["idEnseignant", "idDiscipline"],
+            targetCol: "idClasse",
+            maxDepth: 5,
+            minSamplesLeaf: 2,
+          });
+
+          log(
+            " Random Forest configuré avec " +
+              testRandomForest.nTrees +
+              " arbres",
+            "success",
+          );
+          log(
+            "   Colonnes caractéristiques : " +
+              testRandomForest.featureCols.join(", "),
+            "info",
+          );
+          log("   Colonne cible : " + testRandomForest.targetCol, "info");
+
+          // Créer l'analyseur
+          testAnalyser = new tools.Library.ObjectAnalyser(
+            testMatrice,
+            testRandomForest,
+          );
+          testMatrice.setAnalyser(testAnalyser);
+
+          log(" ObjectAnalyser configuré sur la matrice", "success");
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: true,
+            hasAnalyser: true,
+            isTrained: false,
+            nTrees: testRandomForest.nTrees,
+            progress: 33,
+          });
+
+          addTestResult(
+            "Configuration du Random Forest",
+            "success",
+            testRandomForest.nTrees + " arbres configurés",
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult(
+            "Configuration du Random Forest",
+            "error",
+            error.message,
+          );
+          return false;
+        }
+      }
+
+      /**
+       * TEST 3 : Entraînement du modèle
+       */
+      function runTest3() {
+        log("=== TEST 3 : Entraînement du modèle ===", "info");
+
+        try {
+          if (!testMatrice || !testAnalyser) {
+            throw new Error("La matrice ou l'analyseur n'est pas configuré.");
+          }
+
+          log(" Entraînement en cours...", "info");
+
+          // Entraîner le modèle
+          testMatrice.trainModel();
+
+          log(" Modèle entraîné avec succès !", "success");
+          log(
+            "   " +
+              testMatrice.getModelType() +
+              " avec " +
+              testRandomForest.trees.length +
+              " arbres",
+            "info",
+          );
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: true,
+            hasAnalyser: true,
+            isTrained: true,
+            nTrees: testRandomForest.trees.length,
+            progress: 50,
+          });
+
+          addTestResult(
+            "Entraînement du modèle",
+            "success",
+            testRandomForest.trees.length + " arbres construits",
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult("Entraînement du modèle", "error", error.message);
+          return false;
+        }
+      }
+
+      /**
+       * TEST 4 : Transformation en arbre
+       */
+      function runTest4() {
+        log("=== TEST 4 : Transformation en arbre ===", "info");
+
+        try {
+          if (!testMatrice || !testAnalyser) {
+            throw new Error("La matrice ou l'analyseur n'est pas configuré.");
+          }
+
+          log(" Transformation de la matrice en arbre...", "info");
+
+          // Transformer la matrice en arbre
+          testTree = testMatrice.transform(function (cell) {
+            // Retourner une chaîne lisible
+            return cell.val !== null && cell.val !== undefined
+              ? String(cell.val)
+              : "null";
+          });
+
+          log(" Arbre généré avec succès !", "success");
+          log("   Hauteur : " + testTree.getHeight(), "info");
+          log("   Taille : " + testTree.getSize() + " nœuds", "info");
+
+          // Afficher l'arbre
+          displayTree(testTree);
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: true,
+            hasAnalyser: true,
+            isTrained: true,
+            nTrees: testRandomForest.trees.length,
+            progress: 66,
+          });
+
+          addTestResult(
+            "Transformation en arbre",
+            "success",
+            "Hauteur: " +
+              testTree.getHeight() +
+              ", Taille: " +
+              testTree.getSize(),
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult("Transformation en arbre", "error", error.message);
+          return false;
+        }
+      }
+
+      /**
+       * TEST 5 : Prédiction
+       */
+      function runTest5() {
+        log("=== TEST 5 : Prédiction ===", "info");
+
+        try {
+          if (!testMatrice || !testAnalyser || !testMatrice.isModelTrained()) {
+            throw new Error("Le modèle n'est pas entraîné.");
+          }
+
+          // Samples à tester (avec des données manquantes)
+          const samples = [
+            { idEnseignant: 26848, idDiscipline: 1343 },
+            { idEnseignant: 28158, idDiscipline: 1345 },
+            { idEnseignant: 26585, idDiscipline: 2024 },
+            { idEnseignant: 27131, idDiscipline: 2024 },
+            { idEnseignant: 28177, idDiscipline: 1345 },
+          ];
+
+          log(" Prédiction sur " + samples.length + " samples...", "info");
+
+          testPredictions = [];
+          for (let i = 0; i < samples.length; i++) {
+            const input = samples[i];
+            const output = testMatrice.predict(input);
+            testPredictions.push({ input, output });
+            log(
+              `   Sample ${i + 1} : ${JSON.stringify(input)} → ${JSON.stringify(output)}`,
+              "success",
+            );
+          }
+
+          // Afficher les prédictions
+          displayPredictions(testPredictions);
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: true,
+            hasAnalyser: true,
+            isTrained: true,
+            nTrees: testRandomForest.trees.length,
+            progress: 83,
+          });
+
+          addTestResult(
+            "Prédiction",
+            "success",
+            testPredictions.length + " prédictions effectuées",
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult("Prédiction", "error", error.message);
+          return false;
+        }
+      }
+
+      /**
+       * TEST 6 : Changement dynamique de modèle
+       */
+      function runTest6() {
+        log("=== TEST 6 : Changement dynamique de modèle ===", "info");
+
+        try {
+          if (!testMatrice || !testAnalyser) {
+            throw new Error("La matrice ou l'analyseur n'est pas configuré.");
+          }
+
+          log(" Création d'un nouveau modèle RandomForest...", "info");
+
+          // Créer un nouveau modèle avec des paramètres différents
+          const newRF = new tools.Library.RandomForest();
+          newRF.configure({
+            nTrees: 10,
+            featureCols: ["idEnseignant", "idDiscipline", "id"],
+            targetCol: "regime",
+            maxDepth: 8,
+          });
+
+          // Changer le modèle
+          testAnalyser.setModel(newRF);
+          testRandomForest = newRF;
+
+          log(
+            " Modèle changé vers : " + testAnalyser.getModelType(),
+            "success",
+          );
+          log("   Nouveau nombre d'arbres : " + newRF.nTrees, "info");
+          log("   Nouvelle colonne cible : " + newRF.targetCol, "info");
+
+          // Ré-entraîner
+          log(" Ré-entraînement du nouveau modèle...", "info");
+          testMatrice.trainModel();
+
+          // Faire une nouvelle prédiction
+          const sample = { idEnseignant: 26848, idDiscipline: 1343 };
+          const prediction = testMatrice.predict(sample);
+
+          log(
+            ` Nouvelle prédiction : ${JSON.stringify(prediction)}`,
+            "success",
+          );
+
+          // Mettre à jour l'état
+          updateDataState({
+            hasMatrice: true,
+            hasModel: true,
+            hasAnalyser: true,
+            isTrained: true,
+            nTrees: testRandomForest.trees.length,
+            progress: 100,
+          });
+
+          addTestResult(
+            "Changement dynamique de modèle",
+            "success",
+            "Nouveau modèle avec " + newRF.nTrees + " arbres",
+          );
+
+          return true;
+        } catch (error) {
+          log(" Erreur : " + error.message, "error");
+          addTestResult(
+            "Changement dynamique de modèle",
+            "error",
+            error.message,
+          );
+          return false;
+        }
+      }
+
+      // ============================================================
+      // LANCEMENT DE TOUS LES TESTS
+      // ============================================================
+
+      function runAllTests() {
+        log("═══════════════════════════════════════════════════", "info");
+        log(" LANCEMENT DE TOUS LES TESTS", "info");
+        log("═══════════════════════════════════════════════════", "info");
+
+        testResults = [];
+        testPredictions = [];
+
+        // Exécuter les tests en séquence
+        setTimeout(() => {
+          if (runTest1()) {
+            setTimeout(() => {
+              if (runTest2()) {
+                setTimeout(() => {
+                  if (runTest3()) {
+                    setTimeout(() => {
+                      if (runTest4()) {
+                        setTimeout(() => {
+                          if (runTest5()) {
+                            setTimeout(() => {
+                              runTest6();
+                              log(
+                                "═══════════════════════════════════════════════════",
+                                "info",
+                              );
+                              log(" TOUS LES TESTS TERMINÉS", "success");
+                              log(
+                                "═══════════════════════════════════════════════════",
+                                "info",
+                              );
+
+                              // Afficher le résumé
+                              let passed = 0,
+                                failed = 0;
+                              for (let i = 0; i < testResults.length; i++) {
+                                if (testResults[i].status === "success")
+                                  passed++;
+                                else failed++;
+                              }
+                              log(
+                                ` Résumé : ${passed} passés, ${failed}  échoués`,
+                                "info",
+                              );
+                            }, 500);
+                          }
+                        }, 500);
+                      }
+                    }, 500);
+                  }
+                }, 500);
+              }
+            }, 500);
+          }
+        }, 500);
+      }
+
+      // ============================================================
+      // INITIALISATION
+      // ============================================================
+
+      log(
+        ' Page de test chargée. Cliquez sur "Lancer tous les tests" pour commencer.',
+        "info",
+      );
+      log(
+        " Modules chargés : Analyser, Tree, RandomForest, ObjectAnalyser, MatriceExtension",
+        "success",
+      );
+
+      // Vérifier que tous les modules sont bien chargés
+      const modules = [
+        {
+          name: "tools.Library.Analyser",
+          path: window.tools?.Library?.Analyser,
+        },
+        { name: "tools.Library.Tree", path: window.tools?.Library?.Tree },
+        {
+          name: "tools.Library.RandomForest",
+          path: window.tools?.Library?.RandomForest,
+        },
+        {
+          name: "tools.Library.ObjectAnalyser",
+          path: window.tools?.Library?.ObjectAnalyser,
+        },
+      ];
+
+      let allLoaded = true;
+      for (let i = 0; i < modules.length; i++) {
+        if (!modules[i].path) {
+          // Essayer avec une autre méthode de détection
+          try {
+            const parts = modules[i].name.split(".");
+            let obj = window;
+            for (let j = 0; j < parts.length; j++) {
+              obj = obj[parts[j]];
+              if (!obj) break;
+            }
+            if (!obj) {
+              log("⚠️ Module manquant : " + modules[i].name, "warning");
+              allLoaded = false;
+            } else {
+              log("✅ Module trouvé : " + modules[i].name, "success");
+            }
+          } catch (e) {
+            log("⚠️ Module manquant : " + modules[i].name, "warning");
+            allLoaded = false;
+          }
+        } else {
+          log("✅ Module trouvé : " + modules[i].name, "success");
+        }
+      }
+
+      if (allLoaded) {
+        log(" Tous les modules sont correctement chargés !", "success");
+      } else {
+        log(
+          " Certains modules sont manquants. Vérifiez les chemins des fichiers.",
+          "warning",
+        );
+      }
+
+      console.log(
+        "%c🧪 E-CAMSCHOOL - Test ObjectAnalyser",
+        "font-size:20px;font-weight:bold;color:#3498db;",
+      );
+      console.log("%cPrêt à être testé !", "font-size:14px;color:#2ecc71;");
+    </script>
+  </body>
+</html>
