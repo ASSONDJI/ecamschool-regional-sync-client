@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test RandomForest - Classification E-Camschool</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .badge-info {
+            background: #2980b9;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .badge-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 6px 10px;
+            text-align: left;
+        }
+
+        table th {
+            background: #3498db;
+            color: white;
+        }
+
+        table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        table tr.success td {
+            background: #d5f5e3;
+        }
+
+        table tr.error td {
+            background: #fadbd8;
+        }
+
+        .log-area {
+            background: #1a1a2e;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            max-height: 350px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .log-area .log-error {
+            color: #ff6b6b;
+        }
+
+        .log-area .log-success {
+            color: #51cf66;
+        }
+
+        .log-area .log-warning {
+            color: #fcc419;
+        }
+
+        .log-area .log-info {
+            color: #74c0fc;
+        }
+
+        .log-area .log-debug {
+            color: #b197fc;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            margin: 3px;
+            font-size: 13px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #219a52;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #d68910;
+        }
+
+        .btn-purple {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .btn-purple:hover:not(:disabled) {
+            background: #6c3483;
+        }
+
+        .form-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .model-selector label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            transition: 0.3s;
+        }
+
+        .model-selector label.active {
+            border-color: #3498db;
+            background: #ebf5fb;
+        }
+
+        .model-selector input[type="radio"] {
+            accent-color: #3498db;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-card .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .stat-card.success {
+            border-left-color: #27ae60;
+        }
+
+        .stat-card.danger {
+            border-left-color: #e74c3c;
+        }
+
+        .stat-card.warning {
+            border-left-color: #f39c12;
+        }
+
+        .stat-card.info {
+            border-left-color: #2980b9;
+        }
+
+        .tree-container {
+            background: #1a1a2e;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> Test RandomForest - Classification E-Camschool</h1>
+    <p>Prédire la réussite d'un enseignement (Succès/Échec) avec <code>RandomForestClassifier</code></p>
+
+    <!-- Contrôle des tests -->
+    <div class="card">
+        <h3> Contrôle des tests</h3>
+
+        <!-- Sélecteur de modèle -->
+        <div class="model-selector">
+            <label class="active" id="labelClassifier">
+                <input type="radio" name="modelType" value="classifier" checked onchange="updateModelType()">
+                 Classifier (Succès/Échec)
+            </label>
+        </div>
+
+        <div style="margin:10px 0">
+            <div class="form-group">
+                <label>Ratio train/test :</label>
+                <input type="number" id="trainRatio" value="0.7" min="0.5" max="0.9" step="0.05" style="width:70px">
+            </div>
+            <div class="form-group">
+                <label>Nombre d'arbres :</label>
+                <input type="number" id="nTrees" value="20" min="5" max="100" step="5" style="width:70px">
+            </div>
+            <div class="form-group">
+                <label>Profondeur max :</label>
+                <input type="number" id="maxDepth" value="8" min="3" max="20" style="width:60px">
+            </div>
+        </div>
+
+        <div>
+            <button class="btn btn-primary" onclick="runAllTests()">▶️ Lancer tous les tests</button>
+            <button class="btn btn-success" onclick="runTest1()">1. Charger données</button>
+            <button class="btn btn-info" onclick="runTest2()">2. Configurer modèle</button>
+            <button class="btn btn-warning" onclick="runTest3()">3. Entraîner</button>
+            <button class="btn btn-purple" onclick="runTest4()">4. Transformer en arbre</button>
+            <button class="btn btn-info" onclick="runTest5()">5. Prédire</button>
+            <button class="btn btn-success" onclick="runTest7()">7. Évaluer</button>
+            <button class="btn btn-danger" onclick="clearLogs()">🧹 Effacer logs</button>
+        </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="card">
+        <h3> Journal d'exécution</h3>
+        <div id="logArea" class="log-area"> En attente des tests...</div>
+    </div>
+
+    <!-- État -->
+    <div class="card">
+        <h3> État</h3>
+        <div id="dataState">
+            <p><span class="info">Matrice :</span> Non créée</p>
+            <p><span class="info">Modèle :</span> Non configuré</p>
+            <p><span class="info">Type :</span> -</p>
+            <p><span class="info">Entraîné :</span> Non</p>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matrice -->
+    <div class="card">
+        <h3> Matrice de données</h3>
+        <div id="matrixDisplay">
+            <p>Aucune donnée chargée.</p>
+        </div>
+    </div>
+
+    <!-- Arbre -->
+    <div class="card">
+        <h3> Arbre généré</h3>
+        <div id="treeDisplay">
+            <p>Aucun arbre généré.</p>
+        </div>
+    </div>
+
+    <!-- Prédictions -->
+    <div class="card">
+        <h3> Prédictions</h3>
+        <div id="predictionDisplay">
+            <p>Aucune prédiction effectuée.</p>
+        </div>
+    </div>
+
+    <!-- Évaluation -->
+    <div class="card">
+        <h3> Évaluation</h3>
+        <div id="evaluationDisplay">
+            <p>Aucune évaluation effectuée.</p>
+        </div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="card">
+        <h3>Résultats des tests</h3>
+        <div id="resultsArea">
+            <p>Aucun test exécuté.</p>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================================ -->
+
+    <script src="js/jquery.js"></script>
+    <script src="js/tools-3.5.js"></script>
+    <script src="js/tools-3.5.library.stats.matrice.js"></script>
+    <script src="js/tools-3.5.library.Analyser.js"></script>
+    <script src="js/tools-3.5.library.Tree.js"></script>
+    <script src="js/tools-3.5.library.RandomForest.js"></script>
+    <script src="js/tools-3.5.library.ObjectAnalyser.js"></script>
+    <script src="js/tools-3.5.library.MatriceExtension.js"></script>
+
+    <script>
+        // ============================================================
+        // VARIABLES GLOBALES
+        // ============================================================
+
+        var testMatrice = null;
+        var testAnalyser = null;
+        var testModel = null;
+        var testTree = null;
+        var testPredictions = [];
+        var logs = [];
+        var testResults = [];
+        var currentModelType = 'classifier';
+
+        //  Colonne cible pour la CLASSIFICATION
+        var targetCol = "reussite";
+
+        //  Colonnes caractéristiques
+        var featureCols = ["idEnseignant", "idDiscipline", "regime", "idClasse", "nbreHeures", "nbreHeuresTP", "tauxPresence", "moyenneClasse", "nbreEleves", "anneeAcad", "portee"];
+
+        // ============================================================
+        // FONCTIONS UTILITAIRES
+        // ============================================================
+
+        function log(message, type = "info") {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = { info: "ℹ️", success: "✅", error: "❌", warning: "⚠️", debug: "🐛" }[type] || "📌";
+            logs.push({ timestamp, message, type });
+            const logArea = document.getElementById("logArea");
+            const className = `log-${type}`;
+            const entry = `[${timestamp}] ${prefix} ${message}\n`;
+            logArea.innerHTML += `<span class="${className}">${entry}</span>`;
+            logArea.scrollTop = logArea.scrollHeight;
+            updateProgress();
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById("logArea").innerHTML = "🧹 Logs effacés.\n";
+            document.getElementById("resultsArea").innerHTML = "<p>Aucun résultat affiché.</p>";
+        }
+
+        function updateProgress() {
+            const total = 7;
+            const done = testResults.length;
+            const percent = Math.min((done / total) * 100, 100);
+            document.getElementById("progressFill").style.width = percent + "%";
+        }
+
+        function updateModelType() {
+            const selected = document.querySelector('input[name="modelType"]:checked');
+            currentModelType = selected ? selected.value : 'classifier';
+            document.querySelectorAll('.model-selector label').forEach(el => el.classList.remove('active'));
+            if (selected) {
+                document.getElementById('label' + selected.value.charAt(0).toUpperCase() + selected.value.slice(1))
+                    ?.classList.add('active');
+            }
+            log(`📌 Modèle sélectionné : ${currentModelType === 'classifier' ? 'Classifier' : 'Regressor'}`, 'info');
+        }
+
+        function displayMatrix(matrice) {
+            const container = document.getElementById("matrixDisplay");
+            if (!matrice) { container.innerHTML = "<p>Aucune donnée chargée.</p>"; return; }
+            const rows = matrice.getLignes(),
+                cols = matrice.getColonnes();
+            if (rows.length === 0 || cols.length === 0) { container.innerHTML = "<p>Matrice vide.</p>"; return; }
+            let html = "<table><thead><tr><th>Ligne</th>";
+            for (let i = 0; i < cols.length; i++) html += `<th>${cols[i]}</th>`;
+            html += "</tr></thead><tbody>";
+            const maxRows = Math.min(rows.length, 20);
+            for (let i = 0; i < maxRows; i++) {
+                html += `<tr><td><strong>${rows[i]}</strong></td>`;
+                for (let j = 0; j < cols.length; j++) {
+                    const val = matrice.getElement(cols[j], rows[i]);
+                    html += `<td>${val !== null && val !== undefined ? val : "-"}</td>`;
+                }
+                html += "</tr>";
+            }
+            if (rows.length > 20) html += `<tr><td colspan="${cols.length + 1}">... et ${rows.length - 20} autres lignes</td></tr>`;
+            html += "</tbody></table>";
+            container.innerHTML = html;
+        }
+
+        function displayTree(tree) {
+            const container = document.getElementById("treeDisplay");
+            if (!tree) { container.innerHTML = "<p>Aucun arbre généré.</p>"; return; }
+            try {
+                const str = tree.toString();
+                container.innerHTML = `<div class="tree-container">${str}</div>`;
+            } catch (e) {
+                container.innerHTML = `<p>Erreur : ${e.message}</p>`;
+            }
+        }
+
+        function displayPredictions(predictions) {
+            const container = document.getElementById("predictionDisplay");
+            if (!predictions || predictions.length === 0) {
+                container.innerHTML = "<p>Aucune prédiction effectuée.</p>";
+                return;
+            }
+            let html =
+                "<table><thead><tr><th>#</th><th>Entrée</th><th>Sortie</th></tr></thead><tbody>";
+            for (let i = 0; i < predictions.length; i++) {
+                const p = predictions[i];
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td><pre style="margin:0;font-size:11px;">${JSON.stringify(p.input, null, 2)}</pre></td>
+                    <td><pre style="margin:0;font-size:11px;color:#27ae60;">${JSON.stringify(p.output, null, 2)}</pre></td>
+                </tr>`;
+            }
+            html += "</tbody></table>";
+            container.innerHTML = html;
+        }
+
+        function updateDataState(state) {
+            const container = document.getElementById("dataState");
+            container.innerHTML = `
+                <p><span class="info">Matrice :</span> ${state.hasMatrice ? "✅ Créée" : "❌ Non créée"}</p>
+                <p><span class="info">Modèle :</span> ${state.hasModel ? "✅ Configuré" : "❌ Non configuré"}</p>
+                <p><span class="info">Type :</span> ${state.modelType || "-"}</p>
+                <p><span class="info">Entraîné :</span> ${state.isTrained ? "✅ Oui" : "❌ Non"}</p>
+                <p><span class="info">Arbres :</span> ${state.nTrees || 0}</p>
+                <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width: ${state.progress || 0}%;"></div></div>
+            `;
+        }
+
+        function addTestResult(name, status, message) {
+            testResults.push({ name, status, message });
+            const container = document.getElementById("resultsArea");
+            let html = "";
+            let passed = 0,
+                failed = 0;
+            for (let i = 0; i < testResults.length; i++) {
+                const r = testResults[i];
+                const icon = r.status === "success" ? "✅" : r.status === "error" ? "❌" : "⚠️";
+                if (r.status === "success") passed++;
+                else failed++;
+                html += `<p>${icon} <strong>${r.name}</strong> : ${r.message}</p>`;
+            }
+            html += `<hr><p><strong>Résumé :</strong> ${passed} passés, ${failed} échoués</p>`;
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // TEST 1 : Chargement des données (classification)
+        // ============================================================
+
+        function runTest1() {
+            log("=== TEST 1 : Chargement des données (classification) ===", "info");
+            log("  Chargement de enseignements_classification.json...", "info");
+
+            document.querySelectorAll('.btn').forEach(function (btn) {
+                if (btn.getAttribute('onclick') !== 'runTest1()' && btn.getAttribute('onclick') !== 'clearLogs()') {
+                    btn.disabled = true;
+                }
+            });
+
+            return new Promise((resolve) => {
+                $.getJSON("uds-server/enseignements_classification.json", function (data) {
+                    try {
+                        testMatrice = new tools.Library.Stats.Matrice();
+
+                        const colonnesRetenues = [
+                            "idEnseignant", "idDiscipline", "regime", "idClasse",
+                            "nbreHeures", "nbreHeuresTP", "tauxPresence",
+                            "moyenneClasse", "nbreEleves", "anneeAcad", "portee",
+                            "reussite"
+                        ];
+
+                        for (let i = 0; i < data.length; i++) {
+                            const row = data[i];
+                            const rowId = row.id.toString();
+                            for (let j = 0; j < colonnesRetenues.length; j++) {
+                                const col = colonnesRetenues[j];
+                                const val = row[col];
+                                if (val !== null && val !== undefined) {
+                                    const valNorm = (col === "regime") ? String(val).toUpperCase() : val;
+                                    testMatrice.setElement(valNorm, col, rowId);
+                                }
+                            }
+                        }
+
+                        const nbLignes = testMatrice.getLignes().length;
+                        const nbColonnes = testMatrice.getColonnes().length;
+
+                        // Compter les classes
+                        const lignes = testMatrice.getLignes();
+                        let countSucces = 0, countEchec = 0;
+
+                        for (let i = 0; i < lignes.length; i++) {
+                            const val = testMatrice.getElement("reussite", lignes[i]);
+                            if (val === "Succès") countSucces++;
+                            else if (val === "Échec") countEchec++;
+                        }
+
+
+                        log(`  ✅ Matrice créée : ${nbLignes} lignes, ${nbColonnes} colonnes`, "success");
+                        log(`  📊 Classes : Succès=${countSucces}, Échec=${countEchec}`, "info");
+                        log(`  Colonnes : ${testMatrice.getColonnes().join(", ")}`, "info");
+
+                        displayMatrix(testMatrice);
+                        updateDataState({
+                            hasMatrice: true,
+                            hasModel: false,
+                            modelType: '-',
+                            isTrained: false,
+                            nTrees: 0,
+                            progress: 14
+                        });
+                        addTestResult("Chargement des données", "success", `${nbLignes} lignes chargées`);
+
+                        document.querySelectorAll('.btn').forEach(function (btn) { btn.disabled = false; });
+                        resolve(true);
+                    } catch (error) {
+                        log(`  ❌ Erreur : ${error.message}`, "error");
+                        addTestResult("Chargement des données", "error", error.message);
+                        document.querySelectorAll('.btn').forEach(function (btn) { btn.disabled = false; });
+                        resolve(false);
+                    }
+                }).fail(function (jqXHR, textStatus) {
+                    log(`  ❌ Impossible de charger enseignements_classification.json : ${textStatus}`, "error");
+                    log("  Vérifiez que le fichier est dans le dossier uds-server/", "warning");
+                    addTestResult("Chargement des données", "error", "Fichier introuvable");
+                    document.querySelectorAll('.btn').forEach(function (btn) { btn.disabled = false; });
+                    resolve(false);
+                });
+            });
+        }
+
+        // ============================================================
+        // TEST 2 : Configuration du modèle (Classifier par défaut)
+        // ============================================================
+
+        function runTest2() {
+            log("=== TEST 2 : Configuration du modèle ===", "info");
+
+            try {
+                if (!testMatrice) {
+                    throw new Error("La matrice n'a pas été créée. Lancez le test 1 d'abord.");
+                }
+
+                const nTrees = parseInt(document.getElementById("nTrees").value) || 20;
+                const maxDepth = parseInt(document.getElementById("maxDepth").value) || 8;
+
+                // Utiliser le Classifier (c'est un problème de classification)
+                testModel = new tools.Library.RandomForestClassifier();
+                log("  📌 Modèle : RandomForestClassifier", "info");
+
+                testModel.configure({
+                    nTrees: nTrees,
+                    featureCols: featureCols,
+                    targetCol: targetCol,
+                    maxDepth: maxDepth,
+                    minSamplesLeaf: 2
+                });
+
+                log(`  ✅ Modèle configuré : ${nTrees} arbres, profondeur ${maxDepth}`, "success");
+                log(`  🎯 Colonne cible : ${testModel.targetCol}`, "info");
+
+                testAnalyser = new tools.Library.ObjectAnalyser(testMatrice, testModel);
+                testMatrice.setAnalyser(testAnalyser);
+
+                log("  ✅ ObjectAnalyser configuré", "success");
+
+                updateDataState({
+                    hasMatrice: true,
+                    hasModel: true,
+                    modelType: 'Classifier',
+                    isTrained: false,
+                    nTrees: testModel.nTrees,
+                    progress: 28
+                });
+
+                addTestResult("Configuration du modèle", "success",
+                    `Classifier avec ${testModel.nTrees} arbres`);
+                return true;
+            } catch (error) {
+                log(`  ❌ Erreur : ${error.message}`, "error");
+                addTestResult("Configuration du modèle", "error", error.message);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // TEST 3 : Entraînement
+        // ============================================================
+
+        function runTest3() {
+            log("=== TEST 3 : Entraînement du modèle ===", "info");
+
+            try {
+                if (!testMatrice || !testAnalyser) {
+                    throw new Error("La matrice ou l'analyseur n'est pas configuré.");
+                }
+
+                log("  Entraînement en cours...", "info");
+                const startTime = performance.now();
+
+                testMatrice.trainModel();
+
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                log(`  ✅ Modèle entraîné en ${elapsed}s`, "success");
+                log(`  🌳 ${testModel.trees.length} arbres construits`, "info");
+
+                updateDataState({
+                    hasMatrice: true,
+                    hasModel: true,
+                    modelType: 'Classifier',
+                    isTrained: true,
+                    nTrees: testModel.trees.length,
+                    progress: 42
+                });
+
+                addTestResult("Entraînement du modèle", "success",
+                    `${testModel.trees.length} arbres en ${elapsed}s`);
+                return true;
+            } catch (error) {
+                log(`  ❌ Erreur : ${error.message}`, "error");
+                addTestResult("Entraînement du modèle", "error", error.message);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // TEST 4 : Transformation en arbre
+        // ============================================================
+
+        function runTest4() {
+            log("=== TEST 4 : Transformation en arbre ===", "info");
+
+            try {
+                if (!testMatrice || !testAnalyser) {
+                    throw new Error("La matrice ou l'analyseur n'est pas configuré.");
+                }
+
+                log("  Transformation en arbre...", "info");
+
+                testTree = testMatrice.transform(function (cell) {
+                    return cell.val !== null && cell.val !== undefined ? String(cell.val) : "null";
+                });
+
+                log(`  ✅ Arbre généré : hauteur ${testTree.getHeight()}, ${testTree.getSize()} nœuds`, "success");
+
+                displayTree(testTree);
+
+                updateDataState({
+                    hasMatrice: true,
+                    hasModel: true,
+                    modelType: 'Classifier',
+                    isTrained: true,
+                    nTrees: testModel.trees.length,
+                    progress: 57
+                });
+
+                addTestResult("Transformation en arbre", "success",
+                    `Hauteur ${testTree.getHeight()}, ${testTree.getSize()} nœuds`);
+                return true;
+            } catch (error) {
+                log(`  ❌ Erreur : ${error.message}`, "error");
+                addTestResult("Transformation en arbre", "error", error.message);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // TEST 5 : Prédiction
+        // ============================================================
+
+        function runTest5() {
+            log("=== TEST 5 : Prédiction ===", "info");
+
+            try {
+                if (!testMatrice || !testAnalyser || !testMatrice.isModelTrained()) {
+                    throw new Error("Le modèle n'est pas entraîné.");
+                }
+
+                const samples = [
+                    {
+                        idEnseignant: 1234, idDiscipline: 150, idClasse: 2001, regime: "Francophone", nbreHeures: 4.5,
+                        nbreHeuresTP: 1.5, tauxPresence: 85.3, moyenneClasse: 14.2, nbreEleves: 35, anneeAcad: "2024-2025",
+                        portee: "CLASSE"
+                    },
+                    {
+                        idEnseignant: 2456, idDiscipline: 220, idClasse: 1500, regime: "Anglophone", nbreHeures: 1.8,
+                        nbreHeuresTP: 0.0, tauxPresence: 55.7, moyenneClasse: 7.8, nbreEleves: 72, anneeAcad: "2023-2024",
+                        portee: "ETABLISSEMENT"
+                    },
+                    {
+                        idEnseignant: 3789, idDiscipline: 180, idClasse: 3200, regime: "Francophone", nbreHeures: 3.2,
+                        nbreHeuresTP: 2.0, tauxPresence: 92.1, moyenneClasse: 16.5, nbreEleves: 28, anneeAcad: "2025-2026",
+                        portee: "CLASSE"
+                    },
+                    {
+                        idEnseignant: 4567, idDiscipline: 110, idClasse: 2800, regime: "Anglophone", nbreHeures: 2.1,
+                        nbreHeuresTP: 0.0, tauxPresence: 62.4, moyenneClasse: 8.9, nbreEleves: 65, anneeAcad: "2022-2023",
+                        portee: "CLASSE"
+                    },
+                    {
+                        idEnseignant: 5678, idDiscipline: 250, idClasse: 4100, regime: "Francophone", nbreHeures: 5.0,
+                        nbreHeuresTP: 1.0, tauxPresence: 78.9, moyenneClasse: 12.3, nbreEleves: 45, anneeAcad: "2024-2025",
+                        portee: "ETABLISSEMENT"
+                    }
+                ];
+
+                log(`  🔮 Prédiction sur ${samples.length} samples...`, "info");
+
+                testPredictions = [];
+                for (let i = 0; i < samples.length; i++) {
+                    const input = samples[i];
+                    const output = testMatrice.predict(input);
+                    testPredictions.push({ input, output });
+                    log(`    Sample ${i + 1} → ${targetCol}: ${output[targetCol]}`, "success");
+                }
+
+                displayPredictions(testPredictions);
+
+                updateDataState({
+                    hasMatrice: true,
+                    hasModel: true,
+                    modelType: 'Classifier',
+                    isTrained: true,
+                    nTrees: testModel.trees.length,
+                    progress: 71
+                });
+
+                addTestResult("Prédiction", "success", `${testPredictions.length} prédictions`);
+                return true;
+            } catch (error) {
+                log(`  ❌ Erreur : ${error.message}`, "error");
+                addTestResult("Prédiction", "error", error.message);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // TEST 7 : Évaluation (Classification)
+        // ============================================================
+
+        function runTest7() {
+            log("=== TEST 7 : Évaluation du modèle ===", "info");
+
+            try {
+                if (!testMatrice) throw new Error("Matrice non créée.");
+                if (!testModel) throw new Error("Modèle non configuré.");
+
+                const ratio = parseFloat(document.getElementById("trainRatio").value) || 0.7;
+                log(`  Découpage train/test (${ratio * 100}% / ${(1 - ratio) * 100}%)...`, "info");
+
+                const split = testMatrice.splitTrainTest(ratio);
+                log(`  Train : ${split.trainMatrix.getLignes().length} lignes`, "info");
+                log(`  Test  : ${split.testMatrix.getLignes().length} lignes`, "info");
+
+                // Créer un nouveau modèle pour l'évaluation
+                const nTrees = parseInt(document.getElementById("nTrees").value) || 20;
+                const maxDepth = parseInt(document.getElementById("maxDepth").value) || 8;
+
+                const modelEval = new tools.Library.RandomForestClassifier();
+                modelEval.configure({
+                    nTrees: nTrees,
+                    featureCols: featureCols,
+                    targetCol: targetCol,
+                    maxDepth: maxDepth,
+                    minSamplesLeaf: 2
+                });
+
+                const analyserEval = new tools.Library.ObjectAnalyser(split.trainMatrix, modelEval);
+                split.trainMatrix.setAnalyser(analyserEval);
+                split.trainMatrix.trainModel();
+
+                // ============================================================
+                // ÉVALUATION CLASSIFICATION
+                // ============================================================
+                log("  📊 Évaluation en CLASSIFICATION...", "info");
+                const stats = split.trainMatrix.evaluateClassification(split.testMatrix, targetCol);
+
+                // Affichage HTML
+                const container = document.getElementById("evaluationDisplay");
+
+                let html = '<div class="stats-grid">';
+                html += `<div class="stat-card success"><div class="stat-value">${stats.accuracyPercent}</div><div class="stat-label">Accuracy</div></div>`;
+                html += `<div class="stat-card info"><div class="stat-value">${stats.correct}</div><div class="stat-label">Correctes</div></div>`;
+                html += `<div class="stat-card danger"><div class="stat-value">${stats.incorrect}</div><div class="stat-label">Incorrectes</div></div>`;
+                html += `<div class="stat-card info"><div class="stat-value">${stats.total}</div><div class="stat-label">Total test</div></div>`;
+                html += '</div>';
+
+                // Métriques par classe
+                html += '<h4 style="margin:15px 0 8px">Métriques par classe</h4>';
+                html += '<table><thead><tr><th>Classe</th><th>Précision</th><th>Recall</th><th>F1-Score</th><th>Support</th></tr></thead><tbody>';
+                for (let classe in stats.parClasse) {
+                    if (!Object.hasOwnProperty.call(stats.parClasse, classe)) continue;
+                    const m = stats.parClasse[classe];
+                    const cls = m.f1 >= 0.7 ? "success" : (m.f1 >= 0.4 ? "" : "error");
+                    html += `<tr class="${cls}">
+                            <td><strong>${classe}</strong></td>
+                            <td>${m.precisionPercent}</td>
+                            <td>${m.recallPercent}</td>
+                            <td><strong>${m.f1Percent}</strong></td>
+                            <td>${m.support}</td>
+                        </tr>`;
+                }
+                html += '</tbody></table>';
+
+                // Détail des prédictions
+                html += `<h4 style="margin:15px 0 8px">Détail des prédictions</h4>`;
+                html += '<table><thead><tr><th>#</th><th>Ligne</th><th>Réel</th><th>Prédit</th><th>Résultat</th></tr></thead><tbody>';
+                for (let i = 0; i < Math.min(stats.predictions.length, 20); i++) {
+                    const p = stats.predictions[i];
+                    const icon = p.correct ? "✅" : "❌";
+                    html += `<tr class="${p.correct ? 'success' : 'error'}">
+                            <td>${i + 1}</td>
+                            <td>${p.row}</td>
+                            <td>${p.realValue}</td>
+                            <td>${p.predictedValue}</td>
+                            <td>${icon}</td>
+                        </tr>`;
+                }
+                html += '</tbody></table>';
+
+                // Interprétation
+                let interpretation = "";
+                if (stats.accuracy >= 0.9) interpretation = "✅ Excellent : le modèle classifie parfaitement les données.";
+                else if (stats.accuracy >= 0.8) interpretation = "✅ Bon : le modèle classifie correctement la majorité des cas.";
+                else if (stats.accuracy >= 0.7) interpretation = "⚠️ Moyen : le modèle peut être amélioré.";
+                else interpretation = "❌ Faible : le modèle a du mal à classifier correctement.";
+
+                html += `<p style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:5px;">
+                            <strong>🔍 Interprétation :</strong> ${interpretation}
+                        </p>`;
+
+                container.innerHTML = html;
+
+                log(`  ✅ Accuracy : ${stats.accuracyPercent} (${stats.correct}/${stats.total})`, "success");
+                addTestResult("Évaluation du modèle", "success",
+                    `Accuracy ${stats.accuracyPercent} (${stats.correct}/${stats.total})`);
+
+                updateDataState({
+                    hasMatrice: true,
+                    hasModel: true,
+                    modelType: 'Classifier',
+                    isTrained: true,
+                    nTrees: modelEval.trees.length,
+                    progress: 100
+                });
+
+                return true;
+            } catch (error) {
+                log(`  ❌ Erreur : ${error.message}`, "error");
+                addTestResult("Évaluation du modèle", "error", error.message);
+                return false;
+            }
+        }
+
+        // ============================================================
+        // LANCEMENT DE TOUS LES TESTS
+        // ============================================================
+
+        async function runAllTests() {
+            log("═══════════════════════════════════════════════════", "info");
+            log("🚀 LANCEMENT DE TOUS LES TESTS", "info");
+            log("═══════════════════════════════════════════════════", "info");
+
+            testResults = [];
+            testPredictions = [];
+
+            const tests = [
+                { fn: runTest1, name: "Chargement" },
+                { fn: runTest2, name: "Configuration" },
+                { fn: runTest3, name: "Entraînement" },
+                { fn: runTest4, name: "Transformation" },
+                { fn: runTest5, name: "Prédiction" },
+                { fn: runTest7, name: "Évaluation" }
+            ];
+
+            for (let i = 0; i < tests.length; i++) {
+                const result = await tests[i].fn();
+                if (!result) {
+                    log(`⏹️ Arrêt des tests après échec de : ${tests[i].name}`, "warning");
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            log("═══════════════════════════════════════════════════", "info");
+            const passed = testResults.filter(r => r.status === "success").length;
+            const failed = testResults.filter(r => r.status === "error").length;
+            log(`📊 Résumé : ${passed} passés, ${failed} échoués`, passed > failed ? "success" : "warning");
+            log("═══════════════════════════════════════════════════", "info");
+        }
+
+        // ============================================================
+        // INITIALISATION
+        // ============================================================
+
+        updateModelType();
+        log('📄 Page de test classification chargée.', "info");
+        log('🔍 Cliquez sur "Lancer tous les tests" pour commencer.', "info");
+        log('📌 Objectif : Prédire Succès/Échec d\'un enseignement', "info");
+
+        console.log("%c🌲 E-CAMSCHOOL - Classification Test", "font-size:20px;font-weight:bold;color:#3498db;");
+        console.log("%cPrêt à être testé !", "font-size:14px;color:#2ecc71;");
+    </script>
+</body>
+
+</html>
