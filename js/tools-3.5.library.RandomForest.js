@@ -415,233 +415,284 @@
       return sample;
     };
 
-    /**
-     * Construction récursive d'un arbre de décision
-     * @private
-     * @param {tools.Library.Tree} node - Nœud actuel
-     * @param {tools.Library.Stats.Matrice} matrice - Matrice source
-     * @param {Array} rows - Lignes à considérer
-     * @param {Array} features - Caractéristiques disponibles
-     * @param {string} targetCol - Colonne cible
-     * @param {number} depth - Profondeur actuelle
-     * @param {number} maxDepth - Profondeur maximale
-     */
-    this._buildDecisionTree = function (
-      node,
-      matrice,
-      rows,
-      features,
-      targetCol,
-      depth,
-      maxDepth,
-    ) {
-      // Condition d'arrêt 1 : Plus de lignes ou plus de caractéristiques
-      if (rows.length === 0 || features.length === 0 || depth >= maxDepth) {
-        node.value = this._getMostCommonValue(matrice, rows, targetCol);
-        return;
-      }
-
-      // Condition d'arrêt 2 : Toutes les lignes ont la même valeur cible
-      const targetValues = rows.map((row) =>
-        matrice.getElement(targetCol, row),
-      );
-      const uniqueTargets = [...new Set(targetValues)];
-      if (uniqueTargets.length === 1) {
-        node.value = uniqueTargets[0];
-        return;
-      }
-
-      // Condition d'arrêt 3 : Pas assez d'échantillons pour diviser
-      if (rows.length < this.minSamplesLeaf * 2) {
-        node.value = this._getMostCommonValue(matrice, rows, targetCol);
-        return;
-      }
-
-      // Sélectionner un sous-ensemble aléatoire de caractéristiques
-      const shuffledFeatures = this._shuffleArray(features);
-      const selectedFeatures = shuffledFeatures.slice(0, this.maxFeatures);
-
-      // Trouver la meilleure caractéristique pour diviser
-      const bestFeature = this._selectBestFeature(
-        matrice,
-        rows,
-        selectedFeatures,
-        targetCol,
-      );
-
-      if (!bestFeature) {
-        node.value = this._getMostCommonValue(matrice, rows, targetCol);
-        return;
-      }
-
-      // Obtenir les valeurs uniques de la caractéristique
-      const values = this._getUniqueValues(matrice, rows, bestFeature);
-
-      // Pour chaque valeur, créer un nœud enfant
-      const remainingFeatures = features.filter((f) => f !== bestFeature);
-
-      for (let i = 0; i < values.length; i++) {
-        const value = values[i];
-        const childNode = new tools.Library.Tree(`${bestFeature}=${value}`);
-        node.addChild(childNode);
-
-        // Filtrer les lignes qui ont cette valeur
-        const filteredRows = rows.filter(
-          (row) => matrice.getElement(bestFeature, row) === value,
-        );
-
-        // Continuer récursivement
-        this._buildDecisionTree(
-          childNode,
-          matrice,
-          filteredRows,
-          remainingFeatures,
-          targetCol,
-          depth + 1,
-          maxDepth,
-        );
-      }
-    };
-
-    /**
-     * Sélectionne la meilleure caractéristique pour diviser
-     * @private
-     * @param {tools.Library.Stats.Matrice} matrice - Matrice source
-     * @param {Array} rows - Lignes à considérer
-     * @param {Array} features - Caractéristiques candidates
-     * @param {string} targetCol - Colonne cible
-     * @returns {string|null} La meilleure caractéristique
-     */
-    this._selectBestFeature = function (matrice, rows, features, targetCol) {
-      let bestFeature = null;
-      let bestGain = -Infinity;
-
-      // Si une seule feature, on la prend
-      if (features.length === 1) {
-        return features[0];
-      }
-
-      // Calculer le gain d'information pour chaque caractéristique
-      for (let i = 0; i < features.length; i++) {
-        const feature = features[i];
-        const gain = this._calculateInformationGain(
-          matrice,
-          rows,
-          feature,
-          targetCol,
-        );
-
-        if (gain > bestGain) {
-          bestGain = gain;
-          bestFeature = feature;
-        }
-      }
-
-      return bestFeature;
-    };
-
-    /**
-     * Calcule le gain d'information (implémentation simplifiée)
-     * @private
-     * @param {tools.Library.Stats.Matrice} matrice - Matrice source
-     * @param {Array} rows - Lignes à considérer
-     * @param {string} feature - Caractéristique à évaluer
-     * @param {string} targetCol - Colonne cible
-     * @returns {number} Le gain d'information
-     */
-    /**
-     * Calcule le gain d'information (version fonctionnelle)
-     * @private
-     */
-    this._calculateInformationGain = function (
-      matrice,
-      rows,
-      feature,
-      targetCol,
-    ) {
-      // Si une seule valeur, pas de gain
-      const featureValues = rows.map((row) => matrice.getElement(feature, row));
-      const uniqueFeatureValues = [...new Set(featureValues)];
-      if (uniqueFeatureValues.length <= 1) {
-        return 0;
-      }
-
-      // Si la colonne cible a une seule valeur, pas de gain
-      const targetValues = rows.map((row) =>
-        matrice.getElement(targetCol, row),
-      );
-      const uniqueTargetValues = [...new Set(targetValues)];
-      if (uniqueTargetValues.length <= 1) {
-        return 0;
-      }
-
-      // Entropie avant division
-      const entropyBefore = this._calculateEntropy(targetValues);
-
-      // Entropie après division
-      let entropyAfter = 0;
-      for (let i = 0; i < uniqueFeatureValues.length; i++) {
-        const value = uniqueFeatureValues[i];
-        const subset = rows.filter(
-          (row) => matrice.getElement(feature, row) === value,
-        );
-        const subsetTargets = subset.map((row) =>
-          matrice.getElement(targetCol, row),
-        );
-        const weight = subset.length / rows.length;
-        entropyAfter += weight * this._calculateEntropy(subsetTargets);
-      }
-
-      return entropyBefore - entropyAfter;
-    };
-
-    /**
-     * Calcule l'entropie d'un ensemble de valeurs
-     * @private
-     * @param {Array} values - Liste des valeurs
-     * @returns {number} L'entropie
-     */
-    this._calculateEntropy = function (values) {
-      if (values.length === 0) {
-        return 0;
-      }
-
+    // ----------------------------------------------------------
+    // _calculateGini : Gini impurity d'un groupe de valeurs
+    //   0 = groupe pur  |  0.5 = maximum de mélange (2 classes)
+    // ----------------------------------------------------------
+    this._calculateGini = function (values) {
+      if (values.length === 0) return 0;
       const counts = {};
       for (let i = 0; i < values.length; i++) {
-        const value = values[i];
-        if (value !== undefined && value !== null) {
-          counts[value] = (counts[value] || 0) + 1;
+        const v = values[i];
+        if (v !== null && v !== undefined) {
+          counts[v] = (counts[v] || 0) + 1;
         }
       }
-
-      let entropy = 0;
       const total = values.length;
-
+      let gini = 1;
       for (const key in counts) {
-        const probability = counts[key] / total;
-        entropy -= probability * Math.log2(probability);
+        const p = counts[key] / total;
+        gini -= p * p;
       }
-
-      return entropy;
+      return gini;
     };
 
-    /**
-     * Retourne les valeurs uniques d'une colonne
-     * @private
-     * @param {tools.Library.Stats.Matrice} matrice - Matrice source
-     * @param {Array} rows - Lignes à considérer
-     * @param {string} feature - Colonne à analyser
-     * @returns {Array} Les valeurs uniques
-     */
-    this._getUniqueValues = function (matrice, rows, feature) {
-      const values = [];
+    // ----------------------------------------------------------
+    // _isNumeric : true si la feature contient surtout des nombres
+    //   idEnseignant, idDiscipline → true
+    //   regime → false
+    // ----------------------------------------------------------
+    this._isNumeric = function (matrice, rows, feature) {
+      let numericCount = 0;
+      let total = 0;
       for (let i = 0; i < rows.length; i++) {
-        const value = matrice.getElement(feature, rows[i]);
-        if (value !== undefined && value !== null && !values.includes(value)) {
-          values.push(value);
+        const val = matrice.getElement(feature, rows[i]);
+        if (val !== null && val !== undefined) {
+          total++;
+          if (!isNaN(parseFloat(val)) && isFinite(val)) {
+            numericCount++;
+          }
         }
       }
-      return values;
+      return total > 0 && (numericCount / total) > 0.5;
+    };
+
+    // ----------------------------------------------------------
+    // _findBestThreshold : pour une feature NUMÉRIQUE,
+    //   cherche le seuil qui minimise le Gini pondéré.
+    //   Retourne { threshold, giniGain } ou null
+    // ----------------------------------------------------------
+    this._findBestThreshold = function (matrice, rows, feature, targetCol) {
+      const values = [];
+      for (let i = 0; i < rows.length; i++) {
+        const val = matrice.getElement(feature, rows[i]);
+        if (val !== null && val !== undefined) {
+          values.push(parseFloat(val));
+        }
+      }
+      const uniqueValues = [];
+      const seen = {};
+      for (let i = 0; i < values.length; i++) {
+        if (!seen[values[i]]) {
+          seen[values[i]] = true;
+          uniqueValues.push(values[i]);
+        }
+      }
+      uniqueValues.sort(function(a, b) { return a - b; });
+      if (uniqueValues.length <= 1) return null;
+
+      const targetValues = rows.map(function(row) {
+        return matrice.getElement(targetCol, row);
+      });
+      const giniParent = this._calculateGini(targetValues);
+
+      let bestThreshold = null;
+      let bestGain      = -Infinity;
+
+      for (let i = 0; i < uniqueValues.length - 1; i++) {
+        const threshold = (uniqueValues[i] + uniqueValues[i + 1]) / 2;
+        const leftRows  = [];
+        const rightRows = [];
+        for (let j = 0; j < rows.length; j++) {
+          const val = parseFloat(matrice.getElement(feature, rows[j]));
+          if (!isNaN(val)) {
+            if (val <= threshold) { leftRows.push(rows[j]);  }
+            else                  { rightRows.push(rows[j]); }
+          }
+        }
+        if (leftRows.length === 0 || rightRows.length === 0) continue;
+
+        const leftTargets  = leftRows.map(function(r) {
+          return matrice.getElement(targetCol, r);
+        });
+        const rightTargets = rightRows.map(function(r) {
+          return matrice.getElement(targetCol, r);
+        });
+
+        const giniWeighted = (leftRows.length / rows.length) * this._calculateGini(leftTargets)
+                           + (rightRows.length / rows.length) * this._calculateGini(rightTargets);
+        const gain = giniParent - giniWeighted;
+
+        if (gain > bestGain) {
+          bestGain      = gain;
+          bestThreshold = threshold;
+        }
+      }
+      return bestThreshold !== null ? { threshold: bestThreshold, giniGain: bestGain } : null;
+    };
+
+    // ----------------------------------------------------------
+    // _findBestCategoricalSplit : pour une feature CATÉGORIELLE,
+    //   split binaire "valeur == X ?" vs toutes les autres.
+    //   Retourne { value, giniGain } ou null
+    // ----------------------------------------------------------
+    this._findBestCategoricalSplit = function (matrice, rows, feature, targetCol) {
+      const uniqueValues = [];
+      const seen = {};
+      for (let i = 0; i < rows.length; i++) {
+        const val = matrice.getElement(feature, rows[i]);
+        if (val !== null && val !== undefined && !seen[val]) {
+          seen[val] = true;
+          uniqueValues.push(val);
+        }
+      }
+      if (uniqueValues.length <= 1) return null;
+
+      const targetValues = rows.map(function(row) {
+        return matrice.getElement(targetCol, row);
+      });
+      const giniParent = this._calculateGini(targetValues);
+
+      let bestValue = null;
+      let bestGain  = -Infinity;
+
+      for (let i = 0; i < uniqueValues.length; i++) {
+        const splitValue = uniqueValues[i];
+        const leftRows  = [];
+        const rightRows = [];
+        for (let j = 0; j < rows.length; j++) {
+          const val = matrice.getElement(feature, rows[j]);
+          if (String(val).toUpperCase() === String(splitValue).toUpperCase()) {
+            leftRows.push(rows[j]);
+          } else {
+            rightRows.push(rows[j]);
+          }
+        }
+        if (leftRows.length === 0 || rightRows.length === 0) continue;
+
+        const leftTargets  = leftRows.map(function(r) {
+          return matrice.getElement(targetCol, r);
+        });
+        const rightTargets = rightRows.map(function(r) {
+          return matrice.getElement(targetCol, r);
+        });
+
+        const giniWeighted = (leftRows.length / rows.length) * this._calculateGini(leftTargets)
+                           + (rightRows.length / rows.length) * this._calculateGini(rightTargets);
+        const gain = giniParent - giniWeighted;
+
+        if (gain > bestGain) {
+          bestGain  = gain;
+          bestValue = splitValue;
+        }
+      }
+      return bestValue !== null ? { value: bestValue, giniGain: bestGain } : null;
+    };
+
+    // ----------------------------------------------------------
+    // _findBestSplit : meilleur split parmi toutes les features,
+    //   en combinant numériques et catégorielles.
+    //   Remplace _selectBestFeature + _calculateInformationGain.
+    //   Retourne { feature, type, threshold|value, giniGain } ou null
+    // ----------------------------------------------------------
+    this._findBestSplit = function (matrice, rows, features, targetCol) {
+      let bestSplit = null;
+      let bestGain  = -Infinity;
+
+      for (let i = 0; i < features.length; i++) {
+        const feature = features[i];
+        if (this._isNumeric(matrice, rows, feature)) {
+          const result = this._findBestThreshold(matrice, rows, feature, targetCol);
+          if (result && result.giniGain > bestGain) {
+            bestGain  = result.giniGain;
+            bestSplit = { feature: feature, type: "numeric",
+                          threshold: result.threshold, giniGain: result.giniGain };
+          }
+        } else {
+          const result = this._findBestCategoricalSplit(matrice, rows, feature, targetCol);
+          if (result && result.giniGain > bestGain) {
+            bestGain  = result.giniGain;
+            bestSplit = { feature: feature, type: "categorical",
+                          value: result.value, giniGain: result.giniGain };
+          }
+        }
+      }
+      return bestSplit;
+    };
+
+    // ----------------------------------------------------------
+    // _buildDecisionTree — VERSION CART (remplace ID3)
+    //   Splits toujours BINAIRES (gauche / droite)
+    //   Numérique  : feature <= threshold
+    //   Catégoriel : feature == value
+    // ----------------------------------------------------------
+    this._buildDecisionTree = function (
+      node, matrice, rows, features, targetCol, depth, maxDepth
+    ) {
+      // Pas de lignes
+      if (rows.length === 0) { node.value = null; return; }
+
+      // Toutes les lignes ont la même classe → feuille pure
+      const targetValues = rows.map(function(row) {
+        return matrice.getElement(targetCol, row);
+      });
+      const seenTargets = {};
+      const uniqueTargets = [];
+      for (let i = 0; i < targetValues.length; i++) {
+        if (!seenTargets[targetValues[i]]) {
+          seenTargets[targetValues[i]] = true;
+          uniqueTargets.push(targetValues[i]);
+        }
+      }
+      if (uniqueTargets.length === 1) { node.value = uniqueTargets[0]; return; }
+
+      // Profondeur max / pas assez de lignes / plus de features
+      if (depth >= maxDepth || rows.length < this.minSamplesLeaf * 2 || features.length === 0) {
+        node.value = this._getMostCommonValue(matrice, rows, targetCol);
+        return;
+      }
+
+      // Sous-ensemble aléatoire de features (cœur du Random Forest)
+      const shuffled         = this._shuffleArray(features);
+      const selectedFeatures = shuffled.slice(0, this.maxFeatures);
+
+      // Meilleur split CART
+      const bestSplit = this._findBestSplit(matrice, rows, selectedFeatures, targetCol);
+
+      if (!bestSplit || bestSplit.giniGain <= 0) {
+        node.value = this._getMostCommonValue(matrice, rows, targetCol);
+        return;
+      }
+
+      // Diviser les lignes en deux branches
+      const leftRows  = [];
+      const rightRows = [];
+      let splitName   = "";
+
+      if (bestSplit.type === "numeric") {
+        splitName = bestSplit.feature + "<=" + bestSplit.threshold;
+        for (let i = 0; i < rows.length; i++) {
+          const val = parseFloat(matrice.getElement(bestSplit.feature, rows[i]));
+          if (!isNaN(val) && val <= bestSplit.threshold) { leftRows.push(rows[i]); }
+          else                                           { rightRows.push(rows[i]); }
+        }
+      } else {
+        splitName = bestSplit.feature + "==" + bestSplit.value;
+        for (let i = 0; i < rows.length; i++) {
+          const val = matrice.getElement(bestSplit.feature, rows[i]);
+          if (String(val).toUpperCase() === String(bestSplit.value).toUpperCase()) {
+            leftRows.push(rows[i]);
+          } else {
+            rightRows.push(rows[i]);
+          }
+        }
+      }
+
+      if (leftRows.length === 0 || rightRows.length === 0) {
+        node.value = this._getMostCommonValue(matrice, rows, targetCol);
+        return;
+      }
+
+      node.name = splitName;
+      node.value = this._getMostCommonValue(matrice, rows, targetCol); // secours
+
+      const leftNode  = new tools.Library.Tree(splitName + "_left");
+      const rightNode = new tools.Library.Tree(splitName + "_right");
+      node.addChild(leftNode);
+      node.addChild(rightNode);
+
+      this._buildDecisionTree(leftNode,  matrice, leftRows,  features, targetCol, depth + 1, maxDepth);
+      this._buildDecisionTree(rightNode, matrice, rightRows, features, targetCol, depth + 1, maxDepth);
     };
 
     /**
@@ -710,103 +761,56 @@
       return result;
     };
 
-    /**
-     * Parcourt un arbre pour trouver une prédiction
-     * @private
-     * @param {tools.Library.Tree} node - Nœud actuel
-     * @param {Object} sample - Le sample
-     * @returns {*} La valeur prédite
-     */
-    /**
-     * Parcourt un arbre pour trouver une prédiction
-     * @private
-     */
+    // ----------------------------------------------------------
+    // _traverseTree — VERSION CART
+    //   Lit le critère du nœud (feature<=seuil ou feature==val)
+    //   et descend dans la branche gauche (vrai) ou droite (faux)
+    // ----------------------------------------------------------
     this._traverseTree = function (node, sample) {
-      // Si le nœud a une valeur (feuille), on la retourne
-      if (node.value !== null && node.value !== undefined) {
-        return node.value;
-      }
-
-      // Si le nœud n'a pas d'enfants, on retourne sa valeur
+      // Feuille : pas d'enfants
       if (node.children.length === 0) {
         return node.value;
       }
 
-      // Essayer de suivre le chemin correspondant au sample
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        const parts = child.name.split("=");
+      const leftChild  = node.children[0]; // branche "vrai"
+      const rightChild = node.children[1]; // branche "faux"
+      if (!leftChild || !rightChild) { return node.value; }
 
-        if (parts.length === 2) {
-          const featureName = parts[0].trim();
-          const featureValue = parts[1].trim();
+      const nodeName = node.name || "";
 
-          // Si le sample contient cette valeur, on continue
-          if (
-            sample[featureName] !== undefined &&
-            sample[featureName] !== null &&
-            String(sample[featureName]) === featureValue
-          ) {
-            return this._traverseTree(child, sample);
-          }
-        }
+      if (nodeName.indexOf("<=") !== -1) {
+        // Split numérique : feature <= threshold
+        const sepIdx    = nodeName.indexOf("<=");
+        const feature   = nodeName.substring(0, sepIdx).trim();
+        const threshold = parseFloat(nodeName.substring(sepIdx + 2).trim());
+
+        const sampleVal = sample[feature];
+        if (sampleVal === undefined || sampleVal === null) { return node.value; }
+
+        const numVal = parseFloat(sampleVal);
+        if (isNaN(numVal)) { return node.value; }
+
+        return numVal <= threshold
+          ? this._traverseTree(leftChild, sample)
+          : this._traverseTree(rightChild, sample);
+
+      } else if (nodeName.indexOf("==") !== -1) {
+        // Split catégoriel : feature == value
+        const sepIdx   = nodeName.indexOf("==");
+        const feature  = nodeName.substring(0, sepIdx).trim();
+        const splitVal = nodeName.substring(sepIdx + 2).trim();
+
+        const sampleVal = sample[feature];
+        if (sampleVal === undefined || sampleVal === null) { return node.value; }
+
+        return String(sampleVal).toUpperCase() === splitVal.toUpperCase()
+          ? this._traverseTree(leftChild, sample)
+          : this._traverseTree(rightChild, sample);
+
+      } else {
+        // Nœud racine ou format inconnu → valeur de secours
+        return node.value;
       }
-
-      // Si on ne trouve pas de correspondance exacte, chercher une correspondance partielle
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        const parts = child.name.split("=");
-
-        if (parts.length === 2) {
-          const featureName = parts[0].trim();
-          // Vérifier si la feature existe dans le sample
-          if (
-            sample[featureName] !== undefined &&
-            sample[featureName] !== null
-          ) {
-            // Chercher un enfant qui correspond approximativement
-            const childValue = parts[1].trim();
-            const sampleValue = String(sample[featureName]);
-            if (
-              childValue.includes(sampleValue) ||
-              sampleValue.includes(childValue)
-            ) {
-              return this._traverseTree(child, sample);
-            }
-          }
-        }
-      }
-
-      // Si on ne trouve pas de correspondance, on prend l'enfant le plus fréquent
-      if (node.children.length > 0) {
-        // Compter les enfants qui ont une valeur
-        const childValues = {};
-        for (let i = 0; i < node.children.length; i++) {
-          const child = node.children[i];
-          if (child.value !== null && child.value !== undefined) {
-            childValues[child.value] = (childValues[child.value] || 0) + 1;
-          }
-        }
-
-        // Trouver la valeur la plus fréquente
-        let maxCount = 0;
-        let mostCommonValue = null;
-        for (const key in childValues) {
-          if (childValues[key] > maxCount) {
-            maxCount = childValues[key];
-            mostCommonValue = key;
-          }
-        }
-
-        if (mostCommonValue !== null) {
-          return mostCommonValue;
-        }
-
-        // Sinon, prendre le premier enfant
-        return this._traverseTree(node.children[0], sample);
-      }
-
-      return null;
     };
     
     /**
