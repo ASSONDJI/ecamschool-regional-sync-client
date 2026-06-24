@@ -348,7 +348,7 @@
         <div class="model-selector">
             <label class="active" id="labelClassifier">
                 <input type="radio" name="modelType" value="classifier" checked onchange="updateModelType()">
-                 Classifier (Succès/Échec)
+                Classifier (Succès/Échec)
             </label>
         </div>
 
@@ -365,6 +365,10 @@
                 <label>Profondeur max :</label>
                 <input type="number" id="maxDepth" value="8" min="3" max="20" style="width:60px">
             </div>
+            <div class="form-group">
+                <label>Nombre de plis (K) :</label>
+                <input type="number" id="kFold" value="5" min="2" max="10" step="1" style="width:60px">
+            </div>
         </div>
 
         <div>
@@ -375,7 +379,8 @@
             <button class="btn btn-purple" onclick="runTest4()">4. Transformer en arbre</button>
             <button class="btn btn-info" onclick="runTest5()">5. Prédire</button>
             <button class="btn btn-success" onclick="runTest7()">7. Évaluer</button>
-            <button class="btn btn-danger" onclick="clearLogs()">🧹 Effacer logs</button>
+            <button class="btn btn-primary" onclick="runCrossValidation()"> Validation croisée</button>
+            <button class="btn btn-danger" onclick="clearLogs()"> Effacer logs</button>
         </div>
     </div>
 
@@ -1004,6 +1009,146 @@
             }
         }
 
+            // ============================================================
+    // TEST 8 : VALIDATION CROISÉE (K-Fold)
+    // ============================================================
+
+    function runCrossValidation() {
+      log("=== TEST 8 : Validation croisée (K-Fold) ===", "info");
+
+      try {
+        if (!testMatrice) throw new Error("Matrice non créée.");
+
+        const k = parseInt(document.getElementById("kFold").value) || 5;
+        const nTrees = parseInt(document.getElementById("nTrees").value) || 20;
+        const maxDepth = parseInt(document.getElementById("maxDepth").value) || 8;
+        const targetCol = "reussite";
+
+        // Déterminer le type de modèle
+        const isClassifier = (currentModelType === 'classifier');
+
+        // Configurer le modèle pour la validation croisée
+        const modelConfig = {
+          nTrees: nTrees,
+          maxDepth: maxDepth,
+          minSamplesLeaf: 2,
+          featureCols: featureCols,
+          modelType: isClassifier ? 'classifier' : 'regressor'
+        };
+
+        log(`   Lancement de la validation croisée (${k} plis)...`, "info");
+        log(`   Colonne cible : ${targetCol}`, "info");
+        log(`   Modèle : ${isClassifier ? 'Classifier' : 'Regressor'} avec ${nTrees} arbres`, "info");
+
+        const startTime = performance.now();
+
+        // Lancer la validation croisée
+        const result = testMatrice.crossValidate(k, targetCol, modelConfig, true);
+
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+
+        log(`  ✅ Validation croisée terminée en ${elapsed}s`, "success");
+
+        // Afficher les résultats dans la zone d'évaluation
+        const container = document.getElementById("evaluationDisplay");
+
+        let html = '<div style="background:#f0f8ff;padding:15px;border-radius:8px;border-left:4px solid #3498db;">';
+        html += `<h4> Validation croisée (${k} plis) - ${result.modelType}</h4>`;
+        html += `<p style="font-size:13px;color:#666;">Temps d'exécution : ${elapsed}s | Total : ${result.totalRows} lignes</p>`;
+        html += '</div>';
+
+        // Statistiques globales
+        html += '<div class="stats-grid">';
+
+        if (result.isClassifier) {
+          html += `<div class="stat-card success"><div class="stat-value">${(result.moyenne.accuracy * 100).toFixed(2)}%</div><div class="stat-label">Accuracy moyenne</div></div>`;
+          html += `<div class="stat-card info"><div class="stat-value">${(result.ecartType.accuracy * 100).toFixed(2)}%</div><div class="stat-label">Écart-type (±)</div></div>`;
+          html += `<div class="stat-card success"><div class="stat-value">${result.moyenne.f1.toFixed(4)}</div><div class="stat-label">F1-Score moyen</div></div>`;
+        } else {
+          html += `<div class="stat-card success"><div class="stat-value">${(result.moyenne.r2 * 100).toFixed(2)}%</div><div class="stat-label">R² moyen</div></div>`;
+          html += `<div class="stat-card info"><div class="stat-value">${(result.ecartType.r2 * 100).toFixed(2)}%</div><div class="stat-label">Écart-type (±)</div></div>`;
+          html += `<div class="stat-card info"><div class="stat-value">${result.moyenne.rmse.toFixed(4)}</div><div class="stat-label">RMSE moyen</div></div>`;
+        }
+        html += '</div>';
+
+        // Détail par pli
+        html += '<h4 style="margin:15px 0 8px;">Détail par pli</h4>';
+        html += '<table><thead><tr><th>Pli</th><th>Métrique principale</th><th>Train</th><th>Test</th></tr></thead><tbody>';
+
+        for (let i = 0; i < result.folds.length; i++) {
+          const f = result.folds[i];
+          let metricValue = '';
+          let metricLabel = '';
+
+          if (result.isClassifier) {
+            metricLabel = 'Accuracy';
+            metricValue = (f.metrics.accuracy * 100).toFixed(2) + '%';
+          } else {
+            metricLabel = 'R²';
+            metricValue = (f.metrics.r2 * 100).toFixed(2) + '%';
+          }
+
+          html += `<tr>
+                    <td><strong>Fold ${f.foldIndex}</strong></td>
+                    <td>${metricLabel} : ${metricValue}</td>
+                    <td>${f.trainSize}</td>
+                    <td>${f.testSize}</td>
+                  </tr>`;
+        }
+        html += '</tbody></table>';
+
+        // Interprétation
+        let interpretation = "";
+        if (result.isClassifier) {
+          const acc = result.moyenne.accuracy;
+          const std = result.ecartType.accuracy;
+          if (acc >= 0.9) interpretation = "✅ Excellent : le modèle est très performant et stable (écart-type faible).";
+          else if (acc >= 0.8) interpretation = "✅ Bon : le modèle donne de bons résultats avec une bonne stabilité.";
+          else if (acc >= 0.7) interpretation = " Moyen : le modèle peut être amélioré. Vérifiez les paramètres.";
+          else interpretation = "❌ Faible : le modèle a du mal à classifier correctement.";
+
+          if (std > 0.05) {
+            interpretation += "  L'écart-type est élevé, le modèle n'est pas stable sur tous les plis.";
+          }
+        } else {
+          const r2 = result.moyenne.r2;
+          const std = result.ecartType.r2;
+          if (r2 >= 0.7) interpretation = "✅ Excellent : le modèle explique bien la variance des données.";
+          else if (r2 >= 0.5) interpretation = "✅ Bon : le modèle capture une partie significative de la variance.";
+          else if (r2 >= 0.3) interpretation = " Moyen : le modèle explique une partie de la variance.";
+          else interpretation = "❌ Faible : le modèle n'explique pas la variance des données.";
+
+          if (std > 0.05) {
+            interpretation += " L'écart-type est élevé, le modèle n'est pas stable sur tous les plis.";
+          }
+        }
+
+        html += `<p style="margin-top:15px;padding:10px;background:#f8f9fa;border-radius:5px;">
+                  <strong>🔍 Interprétation :</strong> ${interpretation}
+                </p>`;
+
+        // Résumé textuel
+        html += `<pre style="background:#1a1a2e;color:#00ff88;padding:15px;border-radius:5px;font-size:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto;">${result.resume}</pre>`;
+
+        container.innerHTML = html;
+
+        log(`   Résultat : ${result.resume.split('\n')[1]}`, "success");
+
+        addTestResult("Validation croisée", "success",
+          `${k} plis | ${result.isClassifier ? 'Accuracy' : 'R²'} moyen : ${result.isClassifier ? (result.moyenne.accuracy*100).toFixed(2) : (result.moyenne.r2*100).toFixed(2)}%`);
+
+        return true;
+      } catch (error) {
+        log(`  ❌ Erreur : ${error.message}`, "error");
+        addTestResult("Validation croisée", "error", error.message);
+
+        // Afficher l'erreur dans la zone d'évaluation
+        const container = document.getElementById("evaluationDisplay");
+        container.innerHTML = `<p style="color:red;">❌ Erreur : ${error.message}</p>`;
+
+        return false;
+      }
+    }
         // ============================================================
         // LANCEMENT DE TOUS LES TESTS
         // ============================================================

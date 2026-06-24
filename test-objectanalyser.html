@@ -1129,11 +1129,11 @@
           let obj = window;
           for (let j = 0; j < parts.length; j++) obj = obj[parts[j]];
           if (!obj) {
-            log(`⚠️ Module manquant : ${modules[i].name}`, "warning");
+            log(` Module manquant : ${modules[i].name}`, "warning");
             allLoaded = false;
           } else log(`✅ Module trouvé : ${modules[i].name}`, "success");
         } catch (e) {
-          log(`⚠️ Module manquant : ${modules[i].name}`, "warning");
+          log(` Module manquant : ${modules[i].name}`, "warning");
           allLoaded = false;
         }
       } else {
@@ -1142,9 +1142,9 @@
     }
 
     if (allLoaded) log("✅ Tous les modules sont correctement chargés !", "success");
-    else log("⚠️ Certains modules sont manquants. Vérifiez les chemins.", "warning");
+    else log(" Certains modules sont manquants. Vérifiez les chemins.", "warning");
 
-    console.log("%c🌲 E-CAMSCHOOL - RandomForest Test", "font-size:20px;font-weight:bold;color:#3498db;");
+    console.log("%c E-CAMSCHOOL - RandomForest Test", "font-size:20px;font-weight:bold;color:#3498db;");
     console.log("%cPrêt à être testé !", "font-size:14px;color:#2ecc71;");
   </script>
 </body>

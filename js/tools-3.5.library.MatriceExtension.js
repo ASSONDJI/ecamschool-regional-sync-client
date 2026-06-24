@@ -486,10 +486,401 @@
 
         return result;
     };
+        // ============================================================
+    // 3. VALIDATION CROISÉE (K-Fold Cross-Validation)
+    // ============================================================
+    // ----------------------------------------------------------
+    // crossValidate : Évalue un modèle avec K-Fold
+    // 
+    // Paramètres :
+    //   - k (int) : nombre de plis (défaut: 5)
+    //   - targetCol (string) : colonne cible
+    //   - modelConfig (object) : configuration du modèle
+    //        { nTrees, maxDepth, minSamplesLeaf, featureCols }
+    //   - verbose (boolean) : afficher les logs détaillés (défaut: true)
+    //
+    // Retour :
+    //   {
+    //     modelType: 'Classifier' ou 'Regressor',
+    //     k: nombre de plis,
+    //     folds: [{ foldIndex, metrics, trainSize, testSize }],
+    //     moyenne: { ...métriques moyennes... },
+    //     ecartType: { ...écarts-types... },
+    //     resume: 'Résumé textuel'
+    //   }
+    // ----------------------------------------------------------
+    tools.Library.Stats.Matrice.prototype.crossValidate = function(k, targetCol, modelConfig, verbose) {
+        
+        k = k || 5;
+        verbose = (verbose !== undefined) ? verbose : true;
+        var self = this;
+
+        // Vérifications préliminaires
+        if (!targetCol) {
+            throw new Error("[crossValidate] ❌ Précisez la colonne cible (targetCol).");
+        }
+        if (!this.colIndexExist(targetCol)) {
+            throw new Error("[crossValidate] ❌ La colonne cible '" + targetCol + "' n'existe pas.");
+        }
+        if (k < 2) {
+            throw new Error("[crossValidate] ❌ k doit être >= 2. (k=" + k + ")");
+        }
+
+        // Vérifier si un analyseur est configuré
+        var hasAnalyser = this.hasAnalyser();
+        var modelType = hasAnalyser ? this.getModelType() : "Inconnu";
+
+        // Récupérer les lignes et les mélanger
+        var allRows = this.getLignes().slice();
+        var totalRows = allRows.length;
+
+        // Mélanger aléatoirement
+        for (var i = allRows.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = allRows[i];
+            allRows[i] = allRows[j];
+            allRows[j] = tmp;
+        }
+
+        // Déterminer la taille de chaque pli
+        var foldSize = Math.floor(totalRows / k);
+        var folds = [];
+
+        // Détecter si c'est un classifieur ou un régresseur
+        var isClassifier = false;
+        var isRegressor = false;
+
+        // Méthode 1 : via le modèle configuré
+        if (hasAnalyser && this.objectAnalyser && this.objectAnalyser._model) {
+            var model = this.objectAnalyser._model;
+            if (model.modelType === "RandomForestClassifier") {
+                isClassifier = true;
+            } else if (model.modelType === "RandomForestRegressor") {
+                isRegressor = true;
+            }
+        }
+
+        // Méthode 2 : via le type passé dans modelConfig
+        if (modelConfig && modelConfig.modelType) {
+            if (modelConfig.modelType === "classifier" || modelConfig.modelType === "RandomForestClassifier") {
+                isClassifier = true;
+            } else if (modelConfig.modelType === "regressor" || modelConfig.modelType === "RandomForestRegressor") {
+                isRegressor = true;
+            }
+        }
+
+        // Si toujours indéterminé, on essaie de deviner par la colonne cible
+        if (!isClassifier && !isRegressor) {
+            // On regarde si la colonne cible a peu de valeurs uniques (classification)
+            var uniqueValues = this.getColsValuesGroupForColName(targetCol);
+            if (uniqueValues && uniqueValues.length <= 10) {
+                isClassifier = true;
+                if (verbose) console.log("[crossValidate] 🔍 Type détecté : Classification (peu de valeurs uniques)");
+            } else {
+                isRegressor = true;
+                if (verbose) console.log("[crossValidate] 🔍 Type détecté : Régression (valeurs continues)");
+            }
+        }
+
+        // Déterminer le type de modèle pour les logs
+        var typeLabel = isClassifier ? "CLASSIFICATION" : (isRegressor ? "RÉGRESSION" : "INCONNU");
+        if (verbose) {
+            console.log("[crossValidate] 🧪 Début de la validation croisée (" + k + " plis)");
+            console.log("[crossValidate] 📊 Type de modèle : " + typeLabel);
+            console.log("[crossValidate] 📊 Total lignes : " + totalRows);
+            console.log("[crossValidate] 📊 Taille par pli : " + foldSize + " lignes");
+        }
+
+        // Fonction pour créer un pli
+        function createFold(rows, start, end) {
+            var foldRows = [];
+            for (var i = start; i < end && i < rows.length; i++) {
+                foldRows.push(rows[i]);
+            }
+            return foldRows;
+        }
+
+        // Fonction pour extraire les données d'un pli
+        function extractFoldData(rows, foldIndex, foldSize, k) {
+            var testStart = foldIndex * foldSize;
+            var testEnd = (foldIndex === k - 1) ? rows.length : (foldIndex + 1) * foldSize;
+            var testRows = [];
+            var trainRows = [];
+
+            for (var i = 0; i < rows.length; i++) {
+                if (i >= testStart && i < testEnd) {
+                    testRows.push(rows[i]);
+                } else {
+                    trainRows.push(rows[i]);
+                }
+            }
+
+            return { trainRows: trainRows, testRows: testRows };
+        }
+
+        // Fonction pour créer une matrice à partir de lignes
+        function createMatrixFromRows(rows, allCols, targetCol) {
+            var mat = new tools.Library.Stats.Matrice();
+            for (var i = 0; i < rows.length; i++) {
+                var rowName = rows[i];
+                for (var j = 0; j < allCols.length; j++) {
+                    var colName = allCols[j];
+                    var val = self.getElement(colName, rowName);
+                    if (val !== null && val !== undefined) {
+                        mat.setElement(val, colName, rowName);
+                    }
+                }
+            }
+            return mat;
+        }
+
+        // Récupérer les colonnes
+        var allCols = this.getColonnes();
+
+        // Parcourir les plis
+        var foldResults = [];
+        var allMetrics = [];
+
+        for (var foldIndex = 0; foldIndex < k; foldIndex++) {
+            if (verbose) console.log("[crossValidate]   Fold " + (foldIndex + 1) + "/" + k + "...");
+
+            // Extraire les données du pli
+            var foldData = extractFoldData(allRows, foldIndex, foldSize, k);
+            var trainRows = foldData.trainRows;
+            var testRows = foldData.testRows;
+
+            // Créer les matrices train et test
+            var trainMatrix = createMatrixFromRows(trainRows, allCols, targetCol);
+            var testMatrix = createMatrixFromRows(testRows, allCols, targetCol);
+
+            // Créer le modèle pour ce pli
+            var model;
+            var analyser;
+
+            if (isClassifier) {
+                model = new tools.Library.RandomForestClassifier();
+            } else {
+                model = new tools.Library.RandomForestRegressor();
+            }
+
+            // Configurer le modèle
+            var config = {
+                nTrees: (modelConfig && modelConfig.nTrees) || 20,
+                maxDepth: (modelConfig && modelConfig.maxDepth) || 8,
+                minSamplesLeaf: (modelConfig && modelConfig.minSamplesLeaf) || 2,
+                targetCol: targetCol
+            };
+
+            if (modelConfig && modelConfig.featureCols) {
+                config.featureCols = modelConfig.featureCols;
+            }
+
+            model.configure(config);
+
+            // Créer l'analyseur et entraîner
+            analyser = new tools.Library.ObjectAnalyser(trainMatrix, model);
+            trainMatrix.setAnalyser(analyser);
+            trainMatrix.trainModel();
+
+            // Évaluer selon le type
+            var metrics;
+            if (isClassifier) {
+                metrics = trainMatrix.evaluateClassification(testMatrix, targetCol);
+                metrics.type = "classification";
+            } else {
+                metrics = trainMatrix.evaluateRegression(testMatrix, targetCol);
+                metrics.type = "regression";
+            }
+
+            // Stocker les résultats du pli
+            foldResults.push({
+                foldIndex: foldIndex + 1,
+                trainSize: trainRows.length,
+                testSize: testRows.length,
+                metrics: metrics
+            });
+
+            allMetrics.push(metrics);
+        }
+
+        // Calculer les moyennes et écarts-types
+        function calculateAverageAndStd(values) {
+            var n = values.length;
+            if (n === 0) return { moyenne: 0, ecartType: 0 };
+
+            var sum = 0;
+            for (var i = 0; i < n; i++) {
+                sum += values[i];
+            }
+            var moyenne = sum / n;
+
+            var sumSq = 0;
+            for (var i = 0; i < n; i++) {
+                sumSq += (values[i] - moyenne) * (values[i] - moyenne);
+            }
+            var ecartType = Math.sqrt(sumSq / n);
+
+            return { moyenne: moyenne, ecartType: ecartType };
+        }
+
+        // Extraire les métriques selon le type
+        var resultMoyenne = {};
+        var resultEcartType = {};
+
+        if (isClassifier) {
+            // Métriques de classification
+            var accuracies = [];
+            var f1s = [];
+            var precisions = [];
+            var recalls = [];
+
+            for (var i = 0; i < allMetrics.length; i++) {
+                var m = allMetrics[i];
+                if (m.accuracy !== undefined) accuracies.push(m.accuracy);
+                // F1 moyen par classe
+                if (m.parClasse) {
+                    var f1Sum = 0;
+                    var f1Count = 0;
+                    for (var cls in m.parClasse) {
+                        if (m.parClasse[cls].f1 !== undefined) {
+                            f1Sum += m.parClasse[cls].f1;
+                            f1Count++;
+                        }
+                    }
+                    if (f1Count > 0) f1s.push(f1Sum / f1Count);
+                }
+                if (m.parClasse) {
+                    var precSum = 0;
+                    var precCount = 0;
+                    for (var cls in m.parClasse) {
+                        if (m.parClasse[cls].precision !== undefined) {
+                            precSum += m.parClasse[cls].precision;
+                            precCount++;
+                        }
+                    }
+                    if (precCount > 0) precisions.push(precSum / precCount);
+                }
+                if (m.parClasse) {
+                    var recSum = 0;
+                    var recCount = 0;
+                    for (var cls in m.parClasse) {
+                        if (m.parClasse[cls].recall !== undefined) {
+                            recSum += m.parClasse[cls].recall;
+                            recCount++;
+                        }
+                    }
+                    if (recCount > 0) recalls.push(recSum / recCount);
+                }
+            }
+
+            var accStats = calculateAverageAndStd(accuracies);
+            var f1Stats = calculateAverageAndStd(f1s);
+            var precStats = calculateAverageAndStd(precisions);
+            var recStats = calculateAverageAndStd(recalls);
+
+            resultMoyenne = {
+                accuracy: accStats.moyenne,
+                f1: f1Stats.moyenne,
+                precision: precStats.moyenne,
+                recall: recStats.moyenne
+            };
+            resultEcartType = {
+                accuracy: accStats.ecartType,
+                f1: f1Stats.ecartType,
+                precision: precStats.ecartType,
+                recall: recStats.ecartType
+            };
+
+        } else {
+            // Métriques de régression
+            var r2s = [];
+            var rmses = [];
+            var mses = [];
+
+            for (var i = 0; i < allMetrics.length; i++) {
+                var m = allMetrics[i];
+                if (m.r2 !== undefined) r2s.push(m.r2);
+                if (m.rmse !== undefined) rmses.push(m.rmse);
+                if (m.mse !== undefined) mses.push(m.mse);
+            }
+
+            var r2Stats = calculateAverageAndStd(r2s);
+            var rmseStats = calculateAverageAndStd(rmses);
+            var mseStats = calculateAverageAndStd(mses);
+
+            resultMoyenne = {
+                r2: r2Stats.moyenne,
+                rmse: rmseStats.moyenne,
+                mse: mseStats.moyenne
+            };
+            resultEcartType = {
+                r2: r2Stats.ecartType,
+                rmse: rmseStats.ecartType,
+                mse: mseStats.ecartType
+            };
+        }
+
+        // Construire le résumé
+        var resumeLines = [];
+        resumeLines.push("═══════════════════════════════════════════════════");
+        resumeLines.push("📊 Validation croisée (" + k + " plis) - " + typeLabel);
+        resumeLines.push("═══════════════════════════════════════════════════");
+
+        if (isClassifier) {
+            resumeLines.push("✅ Accuracy moyenne : " + (resultMoyenne.accuracy * 100).toFixed(2) + "% ± " + (resultEcartType.accuracy * 100).toFixed(2) + "%");
+            resumeLines.push("✅ F1-Score moyen   : " + resultMoyenne.f1.toFixed(4) + " ± " + resultEcartType.f1.toFixed(4));
+            resumeLines.push("✅ Précision moyenne : " + resultMoyenne.precision.toFixed(4) + " ± " + resultEcartType.precision.toFixed(4));
+            resumeLines.push("✅ Recall moyen     : " + resultMoyenne.recall.toFixed(4) + " ± " + resultEcartType.recall.toFixed(4));
+        } else {
+            resumeLines.push("✅ R² moyen         : " + (resultMoyenne.r2 * 100).toFixed(2) + "% ± " + (resultEcartType.r2 * 100).toFixed(2) + "%");
+            resumeLines.push("✅ RMSE moyen       : " + resultMoyenne.rmse.toFixed(4) + " ± " + resultEcartType.rmse.toFixed(4));
+            resumeLines.push("✅ MSE moyen        : " + resultMoyenne.mse.toFixed(4) + " ± " + resultEcartType.mse.toFixed(4));
+        }
+        resumeLines.push("───────────────────────────────────────────────────");
+        resumeLines.push("📊 Détail par pli :");
+        for (var i = 0; i < foldResults.length; i++) {
+            var f = foldResults[i];
+            var line = "  Fold " + f.foldIndex + " : ";
+            if (isClassifier) {
+                line += "Accuracy " + (f.metrics.accuracy * 100).toFixed(2) + "% | ";
+                line += "F1 " + (f.metrics.parClasse ? (function() {
+                    var sum = 0,
+                        count = 0;
+                    for (var cls in f.metrics.parClasse) { sum += f.metrics.parClasse[cls].f1;
+                        count++; }
+                    return (sum / count).toFixed(4);
+                })() : "N/A");
+            } else {
+                line += "R² " + (f.metrics.r2 * 100).toFixed(2) + "% | ";
+                line += "RMSE " + f.metrics.rmse.toFixed(4);
+            }
+            line += " | Train:" + f.trainSize + " Test:" + f.testSize;
+            resumeLines.push(line);
+        }
+        resumeLines.push("═══════════════════════════════════════════════════");
+
+        var resume = resumeLines.join("\n");
+
+        // Afficher le résumé
+        if (verbose) console.log("[crossValidate]\n" + resume);
+
+        // Retourner le résultat complet
+        return {
+            modelType: typeLabel,
+            isClassifier: isClassifier,
+            isRegressor: isRegressor,
+            k: k,
+            totalRows: totalRows,
+            folds: foldResults,
+            moyenne: resultMoyenne,
+            ecartType: resultEcartType,
+            resume: resume
+        };
+    };
 
     console.log("✅ Extensions de Matrice chargées avec succès");
     console.log("   - evaluateClassification() pour la classification");
     console.log("   - evaluateRegression() pour la régression");
     console.log("   - evaluateModel() (alias de evaluateClassification)");
-
+    console.log("   - crossValidate() pour la validation croisée K-Fold");
 })();
