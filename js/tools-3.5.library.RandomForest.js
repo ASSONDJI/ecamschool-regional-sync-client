@@ -79,6 +79,22 @@
     this.trainingMatrix = null;
 
     // ============================================================
+    // NOUVEAU : POUR L'IMPORTANCE DES FEATURES
+    // ============================================================
+
+    /**
+     * Importance des caractéristiques (calculée après l'entraînement)
+     * @type {Array|null}
+     */
+    this.featureImportance = null;
+
+    /**
+     * Indique si l'importance a été calculée
+     * @type {boolean}
+     */
+    this._importanceComputed = false;
+
+    // ============================================================
     // MÉTHODES DE CONFIGURATION
     // ============================================================
 
@@ -97,27 +113,27 @@
     this.configure = function (config) {
       if (config.nTrees !== undefined) {
         this.nTrees = config.nTrees;
-        console.log(` Nombre d'arbres : ${this.nTrees}`);
+        console.log(`🌲 Nombre d'arbres : ${this.nTrees}`);
       }
       if (config.sampleRatio !== undefined) {
         this.sampleRatio = config.sampleRatio;
-        console.log(` Ratio d'échantillonnage : ${this.sampleRatio * 100}%`);
+        console.log(`📊 Ratio d'échantillonnage : ${this.sampleRatio * 100}%`);
       }
       if (config.featureCols !== undefined) {
         this.featureCols = config.featureCols;
-        console.log(` Colonnes caractéristiques : ${this.featureCols.join(', ')}`);
+        console.log(`📋 Colonnes caractéristiques : ${this.featureCols.join(', ')}`);
       }
       if (config.targetCol !== undefined) {
         this.targetCol = config.targetCol;
-        console.log(` Colonne cible : ${this.targetCol}`);
+        console.log(`🎯 Colonne cible : ${this.targetCol}`);
       }
       if (config.maxDepth !== undefined) {
         this.maxDepth = config.maxDepth;
-        console.log(` Profondeur maximale : ${this.maxDepth}`);
+        console.log(`📏 Profondeur maximale : ${this.maxDepth}`);
       }
       if (config.minSamplesLeaf !== undefined) {
         this.minSamplesLeaf = config.minSamplesLeaf;
-        console.log(` Minimum par feuille : ${this.minSamplesLeaf}`);
+        console.log(`🌿 Minimum par feuille : ${this.minSamplesLeaf}`);
       }
       return this;
     };
@@ -145,7 +161,7 @@
       // Colonne cible par défaut : dernière colonne
       if (!this.targetCol) {
         this.targetCol = cols[cols.length - 1];
-        console.log(` Colonne cible par défaut : ${this.targetCol}`);
+        console.log(`🎯 Colonne cible par défaut : ${this.targetCol}`);
       }
 
       if (!matrice.colIndexExist(this.targetCol)) {
@@ -158,7 +174,7 @@
       // Colonnes caractéristiques par défaut : toutes sauf la cible
       if (this.featureCols.length === 0) {
         this.featureCols = cols.filter(col => col !== this.targetCol);
-        console.log(` Colonnes caractéristiques par défaut : ${this.featureCols.join(', ')}`);
+        console.log(`📋 Colonnes caractéristiques par défaut : ${this.featureCols.join(', ')}`);
       }
 
       // Vérification des colonnes caractéristiques
@@ -173,11 +189,11 @@
       // maxFeatures par défaut : racine carrée du nombre de caractéristiques
       if (!this.maxFeatures) {
         this.maxFeatures = Math.floor(Math.sqrt(this.featureCols.length));
-        console.log(` maxFeatures par défaut : ${this.maxFeatures}`);
+        console.log(`📊 maxFeatures par défaut : ${this.maxFeatures}`);
       }
 
       // Construction des arbres
-      console.log(` Construction de ${this.nTrees} arbres de décision...`);
+      console.log(`🌳 Construction de ${this.nTrees} arbres de décision...`);
       this.trees = [];
 
       for (let i = 0; i < this.nTrees; i++) {
@@ -203,9 +219,14 @@
 
       this.isTrained = true;
 
+      // ============================================================
+      // NOUVEAU : Calcul de l'importance des features après l'entraînement
+      // ============================================================
+      this._computeFeatureImportance();
+
       console.log(`✅ Random Forest entraîné avec succès ! ${this.trees.length} arbres.`);
-      console.log(`    Caractéristiques : ${this.featureCols.join(', ')}`);
-      console.log(`    Cible : ${this.targetCol}`);
+      console.log(`   📋 Caractéristiques : ${this.featureCols.join(', ')}`);
+      console.log(`   🎯 Cible : ${this.targetCol}`);
 
       return this;
     };
@@ -237,11 +258,11 @@
       );
 
       if (missingCols.length === 0) {
-        console.log("Le sample est déjà complet.");
+        console.log("ℹ️ Le sample est déjà complet.");
         return sample;
       }
 
-      console.log(`Prédiction des colonnes : ${missingCols.join(', ')}`);
+      console.log(`🔮 Prédiction des colonnes : ${missingCols.join(', ')}`);
 
       const predictions = {};
       for (let i = 0; i < missingCols.length; i++) {
@@ -274,7 +295,7 @@
       const rows = matrice.getLignes();
       const cols = matrice.getColonnes();
 
-      console.log(` Transformation de la matrice (${rows.length} lignes, ${cols.length} colonnes)...`);
+      console.log(`🔄 Transformation de la matrice (${rows.length} lignes, ${cols.length} colonnes)...`);
 
       for (let i = 0; i < rows.length; i++) {
         const rowName = rows[i];
@@ -311,6 +332,97 @@
 
       console.log(`✅ Transformation terminée !`);
       return root;
+    };
+
+    // ============================================================
+    // MÉTHODE POUR L'IMPORTANCE DES FEATURES
+    // ============================================================
+
+    /**
+     * Retourne l'importance des caractéristiques
+     * 
+     * @returns {Array|null} Tableau trié [{feature: nom, importance: score}, ...]
+     */
+    this.getFeatureImportance = function () {
+      if (!this._importanceComputed) {
+        console.warn("⚠️ L'importance n'a pas encore été calculée. Entraînez d'abord le modèle.");
+        return null;
+      }
+      return this.featureImportance;
+    };
+
+    /**
+     * Calcule l'importance des caractéristiques (méthode basée sur la réduction d'impureté)
+     * @private
+     */
+    this._computeFeatureImportance = function () {
+      if (!this.isTrained || this.trees.length === 0) {
+        console.warn("⚠️ Impossible de calculer l'importance : modèle non entraîné.");
+        return;
+      }
+
+      console.log("📊 Calcul de l'importance des caractéristiques...");
+
+      // Accumulateur pour toutes les features
+      const totalImportance = {};
+
+      // Parcourir chaque arbre
+      for (let t = 0; t < this.trees.length; t++) {
+        const tree = this.trees[t];
+        // Utiliser la nouvelle méthode computeFeatureImportance de Tree
+        const treeImportance = tree.computeFeatureImportance();
+
+        // Accumuler les scores
+        for (const feature in treeImportance) {
+          if (totalImportance[feature] === undefined) {
+            totalImportance[feature] = 0;
+          }
+          totalImportance[feature] += treeImportance[feature];
+        }
+      }
+
+      // Normaliser les scores (somme = 1)
+      let totalSum = 0;
+      for (const feature in totalImportance) {
+        totalSum += totalImportance[feature];
+      }
+
+      if (totalSum === 0) {
+        console.warn("⚠️ Aucune importance calculée. Les arbres sont peut-être trop petits.");
+        this.featureImportance = this.featureCols.map(function(f) {
+          return { feature: f, importance: 0 };
+        });
+        this._importanceComputed = true;
+        return;
+      }
+
+      // Créer un tableau trié
+      const sortedImportance = [];
+      for (const feature in totalImportance) {
+        sortedImportance.push({
+          feature: feature,
+          importance: totalImportance[feature] / totalSum
+        });
+      }
+
+      // Trier par importance décroissante
+      sortedImportance.sort(function(a, b) {
+        return b.importance - a.importance;
+      });
+
+      this.featureImportance = sortedImportance;
+      this._importanceComputed = true;
+
+      // Afficher un résumé
+      console.log("📊 Importance des caractéristiques :");
+      for (let i = 0; i < Math.min(5, sortedImportance.length); i++) {
+        const fi = sortedImportance[i];
+        const pct = (fi.importance * 100).toFixed(1);
+        const emoji = ["🔴", "🟠", "🟡", "🟢", "🔵"][i] || "▪️";
+        console.log(`   ${emoji} ${fi.feature} → ${pct}%`);
+      }
+
+      this.featureImportance = sortedImportance;
     };
 
     // ============================================================
@@ -597,6 +709,7 @@
 
       if (uniqueTargets.length === 1) {
         node.value = uniqueTargets[0];
+        node.setSamples(rows.length);
         return;
       }
 
@@ -605,6 +718,7 @@
           rows.length < this.minSamplesLeaf * 2 ||
           features.length === 0) {
         node.value = this._getLeafValue(matrice, rows, targetCol);
+        node.setSamples(rows.length);
         return;
       }
 
@@ -616,6 +730,7 @@
 
       if (!bestSplit || bestSplit.gain <= 0) {
         node.value = this._getLeafValue(matrice, rows, targetCol);
+        node.setSamples(rows.length);
         return;
       }
 
@@ -643,8 +758,16 @@
 
       if (leftRows.length === 0 || rightRows.length === 0) {
         node.value = this._getLeafValue(matrice, rows, targetCol);
+        node.setSamples(rows.length);
         return;
       }
+
+      // ============================================================
+      // NOUVEAU : Enregistrer la réduction d'impureté pour l'importance
+      // ============================================================
+      node.setFeatureName(bestSplit.feature);
+      node.setImpurityReduction(bestSplit.gain);
+      node.setSamples(rows.length);
 
       node.name = splitName;
       node.value = this._getLeafValue(matrice, rows, targetCol);
@@ -882,5 +1005,6 @@
   console.log("   - RandomForest (base)");
   console.log("   - RandomForestClassifier (classification)");
   console.log("   - RandomForestRegressor (régression)");
+  console.log("   - Support de l'importance des features (comme scikit-learn)");
 
 })();

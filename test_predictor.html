@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predictor - Outil de prédiction simple</title>
+    <style>
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #2980b9;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d68910;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-info {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #2980b9;
+        }
+
+        .btn-purple {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background: #6c3483;
+        }
+
+        .form-group {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group input[type="number"] {
+            max-width: 100px;
+        }
+
+        .log-area {
+            background: #1a1a2e;
+            color: #00ff88;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .log-area .log-error {
+            color: #ff6b6b;
+        }
+
+        .log-area .log-success {
+            color: #51cf66;
+        }
+
+        .log-area .log-warning {
+            color: #fcc419;
+        }
+
+        .log-area .log-info {
+            color: #74c0fc;
+        }
+
+        .result-card {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .prediction-result {
+            font-size: 18px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .prediction-success {
+            background: #d5f5e3;
+            border: 2px solid #27ae60;
+            color: #1a7a42;
+        }
+
+        .prediction-failure {
+            background: #fadbd8;
+            border: 2px solid #e74c3c;
+            color: #922b21;
+        }
+
+        .prediction-unknown {
+            background: #fcf3cf;
+            border: 2px solid #f39c12;
+            color: #7d6608;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-card .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .stat-card.success {
+            border-left-color: #27ae60;
+        }
+
+        .stat-card.warning {
+            border-left-color: #f39c12;
+        }
+
+        .stat-card.info {
+            border-left-color: #2980b9;
+        }
+
+        .feature-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .feature-bar .bar {
+            height: 20px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+
+        .feature-bar .label {
+            min-width: 150px;
+            font-weight: 600;
+        }
+
+        .feature-bar .value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .steps {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #ddd;
+        }
+
+        .step.active {
+            border-color: #3498db;
+            background: #ebf5fb;
+        }
+
+        .step.done {
+            border-color: #27ae60;
+            background: #d5f5e3;
+        }
+
+        .step .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .step .label {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+    <h1>🎯 Predictor - Prédiction simplifiée</h1>
+    <p>
+        <strong>Pour les décideurs</strong> - Pas besoin de connaître la technique.
+        Chargez vos données, choisissez ce que vous voulez prédire, et obtenez des résultats.
+    </p>
+
+    <!-- ÉTAPES -->
+    <div class="card">
+        <h3>📋 Étapes à suivre</h3>
+        <div class="steps">
+            <div class="step" id="step1">
+                <div class="number">1</div>
+                <div class="label">Charger les données</div>
+            </div>
+            <div class="step" id="step2">
+                <div class="number">2</div>
+                <div class="label">Choisir la cible</div>
+            </div>
+            <div class="step" id="step3">
+                <div class="number">3</div>
+                <div class="label">Analyser</div>
+            </div>
+            <div class="step" id="step4">
+                <div class="number">4</div>
+                <div class="label">Prédire</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLES -->
+    <div class="card">
+        <h3>🎮 Contrôle</h3>
+
+        <div class="form-group">
+            <label>📂 Fichier de données :</label>
+            <select id="dataFile">
+                <option value="uds-server/enseignements_classification.json">Enseignements (classification)</option>
+                <option value="uds-server/enseignements_train.json">Enseignements (régression)</option>
+            </select>
+            <button class="btn btn-primary" onclick="runStep1()">1. Charger</button>
+        </div>
+
+        <div class="form-group">
+            <label>🎯 Colonne à prédire :</label>
+            <select id="targetCol">
+                <option value="reussite">reussite (Succès/Échec)</option>
+                <option value="tauxReussite">tauxReussite (valeur numérique)</option>
+            </select>
+            <button class="btn btn-primary" onclick="runStep2()">2. Choisir</button>
+        </div>
+
+        <div class="form-group">
+            <label>⚙️ Options avancées :</label>
+            <label style="min-width:auto;">Arbres :</label>
+            <input type="number" id="nTrees" value="20" min="5" max="100" style="max-width:70px;">
+            <label style="min-width:auto;">Profondeur :</label>
+            <input type="number" id="maxDepth" value="8" min="3" max="20" style="max-width:70px;">
+            <label style="min-width:auto;">Plis (K) :</label>
+            <input type="number" id="kFold" value="5" min="2" max="10" style="max-width:60px;">
+        </div>
+
+        <div>
+            <button class="btn btn-success" onclick="runStep3()">3. Analyser</button>
+            <button class="btn btn-warning" onclick="runStep4()">4. Prédire</button>
+            <button class="btn btn-danger" onclick="clearAll()">🗑️ Réinitialiser</button>
+            <div
+                style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid #ddd;padding-top:10px;">
+                <button class="btn btn-info" onclick="showCharts()">📊 Voir les graphiques</button>
+                <button class="btn btn-purple" onclick="showTree(0)" style="background:#8e44ad;color:white;">🌳 Arbre
+                    1</button>
+                <button class="btn btn-purple" onclick="showTree(1)" style="background:#8e44ad;color:white;">🌳 Arbre
+                    2</button>
+                <button class="btn btn-purple" onclick="showTree(2)" style="background:#8e44ad;color:white;">🌳 Arbre
+                    3</button>
+                <button class="btn btn-success" onclick="showAllTrees()">🌲 Tous les arbres</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top:15px;border-top:1px solid #ddd;padding-top:15px;">
+            <label>🔮 Saisir les valeurs à prédire :</label>
+            <div id="predictionInputs" style="display:flex;flex-wrap:wrap;gap:10px;flex:1;">
+                <span style="color:#888;">(Chargez les données d'abord)</span>
+            </div>
+        </div>
+
+        <!-- PHASE 3 : SLIDERS POUR PRÉDICTION SIMPLIFIÉE -->
+        <div class="form-group" style="margin-top:15px;border-top:1px solid #ddd;padding-top:15px;display:block;">
+            <label style="display:block;margin-bottom:10px;">🎛️ Prédiction simplifiée (avec sliders)</label>
+            <div id="sliderContainer" style="display:none;">
+                <div id="sliderInputs" style="display:flex;flex-wrap:wrap;gap:15px;"></div>
+                <div style="margin-top:10px;">
+                    <button class="btn btn-success" onclick="runPredictWithSliders()">🔮 Prédire avec les
+                        sliders</button>
+                </div>
+                <div id="sliderResult" style="margin-top:10px;"></div>
+            </div>
+            <div id="sliderPlaceholder" style="color:#888;font-style:italic;">(Analysez les données d'abord pour voir
+                les
+                sliders)</div>
+        </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="card">
+        <h3>📋 Journal</h3>
+        <div id="logArea" class="log-area">📌 En attente d'action...</div>
+    </div>
+
+    <!-- RÉSULTATS -->
+    <div class="card">
+        <h3>📊 Résultats</h3>
+        <div id="resultsArea">
+            <p>Aucun résultat pour l'instant. Suivez les étapes ci-dessus.</p>
+        </div>
+    </div>
+
+    <!-- PRÉDICTION -->
+    <div class="card">
+        <h3>🔮 Résultat de la prédiction</h3>
+        <div id="predictionArea">
+            <p>Aucune prédiction effectuée.</p>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- GRAPHIQUES AVEC D3.JS -->
+    <!-- ============================================================ -->
+
+    <!-- Graphiques statistiques -->
+    <div class="card" id="chartsSection" style="display:none;">
+        <h3>📊 Visualisation des données</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div>
+                <div id="pieChart" style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+            </div>
+            <div>
+                <div id="barChart" style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+            </div>
+            <div>
+                <div id="histogramChart" style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;">
+                </div>
+            </div>
+            <div>
+                <div id="scatterChart" style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arbre de décision -->
+    <div class="card" id="treeSection" style="display:none;">
+        <h3>🌳 Arbre de décision</h3>
+        <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="showTree(0)">Arbre 1</button>
+            <button class="btn btn-primary" onclick="showTree(1)">Arbre 2</button>
+            <button class="btn btn-primary" onclick="showTree(2)">Arbre 3</button>
+            <button class="btn btn-success" onclick="showAllTrees()">🌲 Tous les arbres</button>
+        </div>
+        <div id="treeContainer"
+            style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;min-height:500px;">
+            <p style="color:#888;text-align:center;padding:40px;">Cliquez sur un arbre pour le visualiser.</p>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================================ -->
+
+    <script src="js/jquery.js"></script>
+    <script src="js/tools-3.5.js"></script>
+    <script src="js/tools-3.5.library.stats.matrice.js"></script>
+    <script src="js/tools-3.5.library.Analyser.js"></script>
+    <script src="js/tools-3.5.library.Tree.js"></script>
+    <script src="js/tools-3.5.library.RandomForest.js"></script>
+    <script src="js/tools-3.5.library.ObjectAnalyser.js"></script>
+    <script src="js/tools-3.5.library.MatriceExtension.js"></script>
+    <script src="js/tools-3.5.library.Predictor.js"></script>
+    <script src="js/tools-3.5.library.Visualizer.js"></script>
+
+    <script>
+        // ============================================================
+        // VARIABLES GLOBALES
+        // ============================================================
+
+        var predictor = null;
+        var loadedData = null;
+        var currentCols = [];
+        var logs = [];
+
+        // ============================================================
+        // FONCTIONS DE LOG
+        // ============================================================
+
+        function log(message, type = "info") {
+            var timestamp = new Date().toLocaleTimeString();
+            var prefix = { info: "ℹ️", success: "✅", error: "❌", warning: "⚠️" }[type] || "📌";
+            logs.push({ timestamp, message, type });
+            var logArea = document.getElementById("logArea");
+            var className = "log-" + type;
+            var entry = "[" + timestamp + "] " + prefix + " " + message + "\n";
+            logArea.innerHTML += '<span class="' + className + '">' + entry + '</span>';
+            logArea.scrollTop = logArea.scrollHeight;
+            updateSteps();
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById("logArea").innerHTML = "🧹 Logs effacés.\n";
+        }
+
+        function updateSteps() {
+            var steps = {
+                step1: predictor && predictor._matrice ? "done" : "active",
+                step2: predictor && predictor._targetCol ? "done" : "active",
+                step3: predictor && predictor._isAnalyzed ? "done" : "active",
+                step4: predictor && predictor._isTrained ? "done" : "active"
+            };
+
+            for (var i = 1; i <= 4; i++) {
+                var el = document.getElementById("step" + i);
+                el.classList.remove("active", "done");
+                if (steps["step" + i] === "active") el.classList.add("active");
+                if (steps["step" + i] === "done") el.classList.add("done");
+            }
+        }
+
+        // ============================================================
+        // ÉTAPE 1 : CHARGER LES DONNÉES
+        // ============================================================
+
+        function runStep1() {
+            log("📂 Chargement des données...", "info");
+
+            var file = document.getElementById("dataFile").value;
+
+            $.getJSON(file, function (data) {
+                try {
+                    loadedData = data;
+                    predictor = new tools.Library.Predictor();
+                    predictor.loadData(data);
+
+                    currentCols = predictor._matrice.getColonnes();
+
+                    var targetSelect = document.getElementById("targetCol");
+                    targetSelect.innerHTML = "";
+                    for (var i = 0; i < currentCols.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = currentCols[i];
+                        option.text = currentCols[i];
+                        targetSelect.appendChild(option);
+                    }
+
+                    updatePredictionInputs();
+
+                    log("✅ Données chargées : " + data.length + " lignes, " + currentCols.length + " colonnes",
+                        "success");
+                    log("📋 Colonnes : " + currentCols.join(", "), "info");
+
+                    document.getElementById("resultsArea").innerHTML = "<p>✅ Données chargées avec succès. Passez à l'étape 2.</p>";
+
+                } catch (error) {
+                    log("❌ Erreur : " + error.message, "error");
+                }
+            }).fail(function () {
+                log("❌ Impossible de charger le fichier : " + file, "error");
+                log("💡 Vérifiez que le fichier existe dans le dossier uds-server/", "warning");
+            });
+        }
+
+        // ============================================================
+        // ÉTAPE 2 : CHOISIR LA CIBLE
+        // ============================================================
+
+        function runStep2() {
+            if (!predictor) {
+                log("❌ Chargez d'abord les données (étape 1)", "error");
+                return;
+            }
+
+            var target = document.getElementById("targetCol").value;
+            if (!target) {
+                log("❌ Sélectionnez une colonne cible", "error");
+                return;
+            }
+
+            try {
+                predictor.setTarget(target);
+                log("🎯 Colonne cible : " + target, "success");
+                document.getElementById("resultsArea").innerHTML = "<p>🎯 Cible choisie : <strong>" + target +
+                    "</strong>. Passez à l'étape 3.</p>";
+            } catch (error) {
+                log("❌ Erreur : " + error.message, "error");
+            }
+        }
+
+        // ============================================================
+        // ÉTAPE 3 : ANALYSER
+        // ============================================================
+
+        function runStep3() {
+            if (!predictor) {
+                log("❌ Chargez d'abord les données (étape 1)", "error");
+                return;
+            }
+
+            if (!predictor._targetCol) {
+                log("❌ Choisissez d'abord la colonne cible (étape 2)", "error");
+                return;
+            }
+
+            var nTrees = parseInt(document.getElementById("nTrees").value) || 20;
+            var maxDepth = parseInt(document.getElementById("maxDepth").value) || 8;
+            var kFold = parseInt(document.getElementById("kFold").value) || 5;
+
+            log("🔍 Analyse en cours... (" + nTrees + " arbres, profondeur " + maxDepth + ")", "info");
+
+            try {
+                var report = predictor.analyze({
+                    nTrees: nTrees,
+                    maxDepth: maxDepth,
+                    kFold: kFold
+                });
+
+                var container = document.getElementById("resultsArea");
+
+                var html = '<div class="result-card">' + report.resume + '</div>';
+
+                html += '<div class="stats-grid">';
+
+                if (report.type === "classification") {
+                    html += '<div class="stat-card success">';
+                    html += '<div class="stat-value">' + (report.cvResults ? (report.cvResults.moyenne.accuracy *
+                        100).toFixed(1) + "%" : "N/A") + '</div>';
+                    html += '<div class="stat-label">Fiabilité</div>';
+                    html += '</div>';
+                } else {
+                    html += '<div class="stat-card success">';
+                    html += '<div class="stat-value">' + (report.cvResults ? (report.cvResults.moyenne.r2 *
+                        100).toFixed(1) + "%" : "N/A") + '</div>';
+                    html += '<div class="stat-label">R² (précision)</div>';
+                    html += '</div>';
+                }
+
+                html += '<div class="stat-card info">';
+                html += '<div class="stat-value">' + report.totalLignes + '</div>';
+                html += '<div class="stat-label">Enregistrements</div>';
+                html += '</div>';
+
+                html += '<div class="stat-card info">';
+                html += '<div class="stat-value">' + report.totalColonnes + '</div>';
+                html += '<div class="stat-label">Colonnes</div>';
+                html += '</div>';
+
+                html += '</div>';
+
+                if (report.featureImportance && report.featureImportance.length > 0) {
+                    html += '<h4 style="margin:15px 0 8px;">🔑 Facteurs les plus influents</h4>';
+                    var emojis = ["🔴", "🟠", "🟡", "🟢", "🔵"];
+                    for (var i = 0; i < Math.min(5, report.featureImportance.length); i++) {
+                        var fi = report.featureImportance[i];
+                        var pct = (fi.importance * 100).toFixed(0);
+                        var emoji = emojis[i] || "▪️";
+                        html += '<div class="feature-bar">';
+                        html += '<span class="label">' + emoji + ' ' + fi.feature + '</span>';
+                        html += '<div class="bar" style="width:' + pct + '%;"></div>';
+                        html += '<span class="value">' + pct + '%</span>';
+                        html += '</div>';
+                    }
+                }
+
+                container.innerHTML = html;
+
+                log(report.resumeCourt, "success");
+                log("💡 Utilisez l'étape 4 pour faire des prédictions", "info");
+
+                updatePredictionInputs();
+
+            } catch (error) {
+                log("❌ Erreur : " + error.message, "error");
+            }
+        }
+
+        // ============================================================
+        // ÉTAPE 4 : PRÉDIRE
+        // ============================================================
+
+        function runStep4() {
+            if (!predictor) {
+                log("❌ Chargez d'abord les données (étape 1)", "error");
+                return;
+            }
+
+            if (!predictor._isTrained) {
+                log("❌ Analysez d'abord les données (étape 3)", "error");
+                return;
+            }
+
+            var sample = {};
+            var inputs = document.querySelectorAll('.pred-input');
+            var allFilled = true;
+
+            for (var i = 0; i < inputs.length; i++) {
+                var input = inputs[i];
+                var colName = input.dataset.col;
+                var val = input.value;
+
+                if (val === "") {
+                    allFilled = false;
+                    input.style.borderColor = "#e74c3c";
+                } else {
+                    input.style.borderColor = "#ddd";
+                    var numVal = parseFloat(val);
+                    sample[colName] = isNaN(numVal) ? val : numVal;
+                }
+            }
+
+            if (!allFilled) {
+                log("❌ Remplissez toutes les valeurs", "error");
+                return;
+            }
+
+            try {
+                var resultat = predictor.predict(sample);
+
+                var container = document.getElementById("predictionArea");
+                var html = "";
+
+                var targetCol = predictor._targetCol;
+                var valeurPredite = resultat[targetCol];
+                var isClassifier = predictor._problemType === "classification";
+
+                var classe = "prediction-unknown";
+                var label = "Résultat : " + valeurPredite;
+
+                if (isClassifier) {
+                    if (valeurPredite === "Succès" || valeurPredite === "SUCCÈS") {
+                        classe = "prediction-success";
+                        label = "✅ SUCCÈS";
+                    } else if (valeurPredite === "Échec" || valeurPredite === "ÉCHEC") {
+                        classe = "prediction-failure";
+                        label = "❌ ÉCHEC";
+                    }
+                }
+
+                var confiance = resultat._confiance || "N/A";
+
+                html += '<div class="prediction-result ' + classe + '">';
+                html += '<div style="font-size:32px;font-weight:bold;">' + label + '</div>';
+                if (isClassifier) {
+                    html += '<div style="font-size:16px;margin-top:10px;">Confiance : ' + confiance + '</div>';
+                } else {
+                    html += '<div style="font-size:16px;margin-top:10px;">Valeur prédite : ' + valeurPredite + '</div>';
+                }
+                html += '</div>';
+
+                html += '<div style="margin-top:10px;font-size:13px;color:#666;">';
+                html += '<strong>Valeurs saisies :</strong><br>';
+                for (var key in sample) {
+                    html += key + ' = ' + sample[key] + '<br>';
+                }
+                html += '</div>';
+
+                container.innerHTML = html;
+
+                log("🔮 Prédiction effectuée : " + valeurPredite, "success");
+
+            } catch (error) {
+                log("❌ Erreur : " + error.message, "error");
+            }
+        }
+
+        // ============================================================
+        // PHASE 3 : SLIDERS POUR PRÉDICTION SIMPLIFIÉE
+        // ============================================================
+
+        function updateSliders() {
+            if (!predictor || !predictor._isTrained) {
+                document.getElementById("sliderContainer").style.display = "none";
+                document.getElementById("sliderPlaceholder").style.display = "block";
+                return;
+            }
+
+            var suggested = predictor.getSuggestedValues();
+            if (!suggested || Object.keys(suggested).length === 0) {
+                document.getElementById("sliderContainer").style.display = "none";
+                document.getElementById("sliderPlaceholder").style.display = "block";
+                return;
+            }
+
+            document.getElementById("sliderContainer").style.display = "block";
+            document.getElementById("sliderPlaceholder").style.display = "none";
+
+            var container = document.getElementById("sliderInputs");
+            var html = "";
+
+            for (var col in suggested) {
+                var info = suggested[col];
+                if (info.isNumeric) {
+                    var mean = info.mean !== undefined ? info.mean : (info.min + info.max) / 2;
+                    html += '<div style="min-width:180px;flex:1;">';
+                    html += '<label style="font-size:11px;font-weight:600;display:block;">' + col + '</label>';
+                    html += '<div style="display:flex;align-items:center;gap:8px;">';
+                    html += '<span style="font-size:10px;color:#888;">' + info.min.toFixed(1) + '</span>';
+                    html += '<input type="range" class="slider-input" data-col="' + col + '" ';
+                    html += 'min="' + info.min + '" max="' + info.max + '" step="' + info.step + '" ';
+                    html += 'value="' + mean + '" style="flex:1;">';
+                    html += '<span style="font-size:10px;color:#888;">' + info.max.toFixed(1) + '</span>';
+                    html += '</div>';
+                    html += '<div style="text-align:center;font-size:12px;font-weight:600;" class="slider-value" id="slider-value-' + col + '">' + mean
+                        .toFixed(1) + '</div>';
+                    html += '</div>';
+                } else {
+                    if (info.values && info.values.length > 0) {
+                        html += '<div style="min-width:150px;flex:1;">';
+                        html += '<label style="font-size:11px;font-weight:600;display:block;">' + col + '</label>';
+                        html += '<select class="slider-input" data-col="' + col + '" style="width:100%;padding:5px;border:1px solid #ddd;border-radius:4px;">';
+                        for (var v = 0; v < info.values.length; v++) {
+                            html += '<option value="' + info.values[v] + '">' + info.values[v] + '</option>';
+                        }
+                        html += '</select>';
+                        html += '</div>';
+                    }
+                }
+            }
+
+            container.innerHTML = html;
+
+            var sliders = document.querySelectorAll('.slider-input[type="range"]');
+            for (var i = 0; i < sliders.length; i++) {
+                (function (slider) {
+                    slider.addEventListener('input', function () {
+                        var col = this.dataset.col;
+                        var val = parseFloat(this.value);
+                        if (!isNaN(val)) {
+                            var display = document.getElementById('slider-value-' + col);
+                            if (display) {
+                                display.textContent = val.toFixed(1);
+                            }
+                        }
+                    });
+                })(sliders[i]);
+            }
+        }
+
+        function runPredictWithSliders() {
+            if (!predictor || !predictor._isTrained) {
+                log("❌ Analysez d'abord les données (étape 3)", "error");
+                return;
+            }
+
+            var sliders = document.querySelectorAll('.slider-input');
+            var sample = {};
+
+            for (var i = 0; i < sliders.length; i++) {
+                var slider = sliders[i];
+                var colName = slider.dataset.col;
+                var val = slider.value;
+
+                var numVal = parseFloat(val);
+                if (!isNaN(numVal)) {
+                    sample[colName] = numVal;
+                } else {
+                    sample[colName] = val;
+                }
+            }
+
+            if (Object.keys(sample).length === 0) {
+                log("❌ Aucune valeur à prédire", "error");
+                return;
+            }
+
+            try {
+                var resultat = predictor.predict(sample);
+                displaySliderResult(resultat, sample);
+                log("🔮 Prédiction avec sliders effectuée", "success");
+            } catch (error) {
+                log("❌ Erreur : " + error.message, "error");
+            }
+        }
+
+        function displaySliderResult(resultat, sample) {
+            var container = document.getElementById("sliderResult");
+            var targetCol = predictor._targetCol;
+            var valeurPredite = resultat[targetCol];
+            var isClassifier = predictor._problemType === "classification";
+
+            var html = '<div style="background:#f0f8ff;padding:15px;border-radius:8px;border-left:4px solid #3498db;">';
+            html += '<h4 style="margin:0 0 10px 0;">🔮 Résultat de la prédiction</h4>';
+
+            if (isClassifier) {
+                var classe = "prediction-unknown";
+                var label = "Résultat : " + valeurPredite;
+                var confiance = resultat._confiance || "N/A";
+
+                if (valeurPredite === "Succès" || valeurPredite === "SUCCÈS") {
+                    classe = "prediction-success";
+                    label = "✅ SUCCÈS";
+                } else if (valeurPredite === "Échec" || valeurPredite === "ÉCHEC") {
+                    classe = "prediction-failure";
+                    label = "❌ ÉCHEC";
+                }
+
+                html += '<div class="prediction-result ' + classe + '" style="padding:10px;margin:0;">';
+                html += '<div style="font-size:24px;font-weight:bold;">' + label + '</div>';
+                html += '<div style="font-size:14px;">Confiance : ' + confiance + '</div>';
+                html += '</div>';
+            } else {
+                html += '<div style="font-size:24px;font-weight:bold;color:#2c3e50;">';
+                html += '📊 ' + targetCol + ' = ' + valeurPredite;
+                html += '</div>';
+            }
+
+            html += '<div style="margin-top:10px;font-size:13px;color:#666;">';
+            html += '<strong>Valeurs saisies :</strong><br>';
+            for (var key in sample) {
+                var val = sample[key];
+                if (typeof val === 'number') {
+                    html += key + ' = ' + val.toFixed(1) + '<br>';
+                } else {
+                    html += key + ' = ' + val + '<br>';
+                }
+            }
+            html += '</div>';
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // MISE À JOUR DES INPUTS DE PRÉDICTION (AMÉLIORÉE)
+        // ============================================================
+
+        function updatePredictionInputs() {
+            var container = document.getElementById("predictionInputs");
+
+            if (!predictor || !predictor._matrice) {
+                container.innerHTML = '<span style="color:#888;">(Chargez les données d\'abord)</span>';
+                return;
+            }
+
+            var cols = predictor._matrice.getColonnes();
+            var target = predictor._targetCol;
+
+            var html = "";
+            for (var i = 0; i < cols.length; i++) {
+                var col = cols[i];
+                if (col === target) continue;
+
+                var values = predictor._matrice.getElementsColonne(col);
+                var isNumeric = false;
+                var isCategory = false;
+                var uniqueValues = predictor._matrice.getColsValuesGroupForColName(col);
+
+                if (uniqueValues && uniqueValues.length <= 10) {
+                    isCategory = true;
+                }
+
+                if (!isCategory) {
+                    for (var j = 0; j < Math.min(10, values.length); j++) {
+                        if (values[j] !== null && values[j] !== undefined) {
+                            var val = String(values[j]).trim();
+                            if (/^-?\d+(\.\d+)?$/.test(val)) {
+                                isNumeric = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (isCategory && uniqueValues && uniqueValues.length > 0) {
+                    html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+                    html += '<label style="font-size:11px;font-weight:600;">' + col + '</label>';
+                    html += '<select class="pred-input" data-col="' + col + '" style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;width:120px;">';
+                    for (var v = 0; v < uniqueValues.length; v++) {
+                        html += '<option value="' + uniqueValues[v] + '">' + uniqueValues[v] + '</option>';
+                    }
+                    html += '</select>';
+                    html += '</div>';
+                } else if (isNumeric) {
+                    html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+                    html += '<label style="font-size:11px;font-weight:600;">' + col + '</label>';
+                    html += '<input type="number" class="pred-input" data-col="' + col + '" placeholder="Valeur numérique" style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;width:120px;">';
+                    html += '</div>';
+                } else {
+                    html += '<div style="display:flex;flex-direction:column;gap:2px;">';
+                    html += '<label style="font-size:11px;font-weight:600;">' + col + '</label>';
+                    html += '<input type="text" class="pred-input" data-col="' + col + '" placeholder="Texte" style="padding:5px 8px;border:1px solid #ddd;border-radius:4px;width:120px;">';
+                    html += '</div>';
+                }
+            }
+
+            if (html === "") {
+                html = '<span style="color:#888;">Aucune colonne disponible</span>';
+            }
+
+            container.innerHTML = html;
+
+            updateSliders();
+        }
+
+        // ============================================================
+        // VISUALISATION AVEC D3.JS
+        // ============================================================
+
+        var visualizer = null;
+        var currentTreeIndex = 0;
+
+        function showCharts() {
+            if (!predictor || !predictor._matrice) {
+                log("❌ Chargez et analysez les données d'abord.", "error");
+                return;
+            }
+
+            var matrice = predictor._matrice;
+            visualizer = new tools.Library.Visualizer(matrice);
+            visualizer.setSize(500, 400);
+
+            document.getElementById("chartsSection").style.display = "block";
+
+            // ============================================================
+            // 1. Camembert - Répartition
+            // ============================================================
+            try {
+                var pieCol = null;
+                var availableCols = predictor._matrice.getColonnes();
+
+                // Chercher une colonne de classification
+                if (availableCols.indexOf("reussite") !== -1) {
+                    pieCol = "reussite";
+                } else if (availableCols.indexOf("tauxReussite") !== -1) {
+                    // Transformer tauxReussite en catégorie (>= 50 = Succès)
+                    pieCol = "tauxReussite";
+                }
+
+                if (pieCol) {
+                    if (pieCol === "tauxReussite") {
+                        // Créer une colonne temporaire pour le camembert
+                        var tempCol = "__temp_reussite";
+                        var lignes = predictor._matrice.getLignes();
+                        for (var i = 0; i < lignes.length; i++) {
+                            var val = predictor._matrice.getElement("tauxReussite", lignes[i]);
+                            var categorie = (parseFloat(val) >= 50) ? "Succès" : "Échec";
+                            predictor._matrice.setElement(categorie, tempCol, lignes[i]);
+                        }
+                        visualizer.pieChart(tempCol, "#pieChart", { title: "Répartition Succès/Échec (seuil 50%)" });
+                        // Supprimer la colonne temporaire
+                        // (on ne peut pas vraiment la supprimer, mais on peut l'ignorer)
+                    } else {
+                        visualizer.pieChart("reussite", "#pieChart", { title: "Répartition Succès/Échec" });
+                    }
+                } else {
+                    d3.select("#pieChart").html('<p style="color:#888;">Aucune colonne de classification disponible</p>');
+                }
+            } catch (e) {
+                d3.select("#pieChart").html('<p style="color:#888;">Erreur : ' + e.message + '</p>');
+            }
+
+            // ============================================================
+            // 2. Barres - Moyenne par régime
+            // ============================================================
+            try {
+                var regimeValues = predictor._matrice.getColsValuesGroupForColName("regime");
+
+                if (regimeValues && regimeValues.length > 0) {
+                    var availableCols = predictor._matrice.getColonnes();
+                    var valueCol = null;
+                    var numericCols = ["moyenneClasse", "tauxPresence", "tauxReussite", "nbreEleves", "nbreHeures", "nbreHeuresTP"];
+
+                    for (var c = 0; c < numericCols.length; c++) {
+                        if (availableCols.indexOf(numericCols[c]) !== -1) {
+                            var testValues = predictor._matrice.getElementsColonne(numericCols[c]);
+                            var hasData = false;
+                            for (var v = 0; v < Math.min(10, testValues.length); v++) {
+                                if (testValues[v] !== null && testValues[v] !== undefined && testValues[v] !== "") {
+                                    hasData = true;
+                                    break;
+                                }
+                            }
+                            if (hasData) {
+                                valueCol = numericCols[c];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (valueCol) {
+                        visualizer.barChart("regime", valueCol, "#barChart", "mean", {
+                            title: "Moyenne par régime (" + valueCol + ")"
+                        });
+                    } else {
+                        d3.select("#barChart").html('<p style="color:#888;">Aucune colonne numérique disponible</p>');
+                    }
+                } else {
+                    d3.select("#barChart").html('<p style="color:#888;">Colonne "regime" vide</p>');
+                }
+            } catch (e) {
+                d3.select("#barChart").html('<p style="color:#888;">Erreur : ' + e.message + '</p>');
+            }
+
+            // ============================================================
+            // 3. Histogramme - Distribution
+            // ============================================================
+            try {
+                var histCol = null;
+                var availableCols = predictor._matrice.getColonnes();
+                var numericCols = ["moyenneClasse", "tauxPresence", "tauxReussite", "nbreEleves", "nbreHeures"];
+
+                for (var c = 0; c < numericCols.length; c++) {
+                    if (availableCols.indexOf(numericCols[c]) !== -1) {
+                        var testValues = predictor._matrice.getElementsColonne(numericCols[c]);
+                        var hasData = false;
+                        for (var v = 0; v < Math.min(10, testValues.length); v++) {
+                            if (testValues[v] !== null && testValues[v] !== undefined && testValues[v] !== "") {
+                                hasData = true;
+                                break;
+                            }
+                        }
+                        if (hasData) {
+                            histCol = numericCols[c];
+                            break;
+                        }
+                    }
+                }
+
+                if (histCol) {
+                    visualizer.histogram(histCol, "#histogramChart", 10, {
+                        title: "Distribution de " + histCol
+                    });
+                } else {
+                    d3.select("#histogramChart").html('<p style="color:#888;">Aucune colonne numérique disponible</p>');
+                }
+            } catch (e) {
+                d3.select("#histogramChart").html('<p style="color:#888;">Erreur : ' + e.message + '</p>');
+            }
+
+            // ============================================================
+            // 4. Nuage de points
+            // ============================================================
+            try {
+                var xCol = null, yCol = null;
+                var availableCols = predictor._matrice.getColonnes();
+
+                if (availableCols.indexOf("tauxPresence") !== -1) xCol = "tauxPresence";
+                else if (availableCols.indexOf("nbreHeures") !== -1) xCol = "nbreHeures";
+
+                if (availableCols.indexOf("tauxReussite") !== -1) yCol = "tauxReussite";
+                else if (availableCols.indexOf("moyenneClasse") !== -1) yCol = "moyenneClasse";
+                else if (availableCols.indexOf("nbreEleves") !== -1) yCol = "nbreEleves";
+
+                if (xCol && yCol) {
+                    visualizer.scatter(xCol, yCol, "#scatterChart", {
+                        title: "Corrélation " + xCol + " / " + yCol,
+                        xLabel: xCol,
+                        yLabel: yCol
+                    });
+                } else {
+                    d3.select("#scatterChart").html('<p style="color:#888;">Colonnes pour le nuage de points non trouvées</p>');
+                }
+            } catch (e) {
+                d3.select("#scatterChart").html('<p style="color:#888;">Erreur : ' + e.message + '</p>');
+            }
+
+            log("📊 Graphiques générés avec D3.js", "success");
+        }
+        function showTree(index) {
+            if (!predictor || !predictor._model || !predictor._model.trees) {
+                log("❌ Entraînez d'abord le modèle.", "error");
+                return;
+            }
+
+            var trees = predictor._model.trees;
+            if (index >= trees.length) {
+                log("❌ Arbre " + (index + 1) + " n'existe pas. " + trees.length + " arbres disponibles.", "warning");
+                return;
+            }
+
+            currentTreeIndex = index;
+            document.getElementById("treeSection").style.display = "block";
+
+            var visualizerTree = new tools.Library.Visualizer(predictor._matrice);
+            visualizerTree.setSize(800, 500);
+            visualizerTree.tree(trees[index], "#treeContainer", {
+                title: "🌳 Arbre de décision " + (index + 1) + "/" + trees.length,
+                nodeColor: '#3498db',
+                linkColor: '#999'
+            });
+
+            log("🌳 Arbre " + (index + 1) + " visualisé", "success");
+        }
+
+        function showAllTrees() {
+            if (!predictor || !predictor._model || !predictor._model.trees) {
+                log("❌ Entraînez d'abord le modèle.", "error");
+                return;
+            }
+
+            var trees = predictor._model.trees;
+            document.getElementById("treeSection").style.display = "block";
+
+            var visualizerTree = new tools.Library.Visualizer(predictor._matrice);
+            visualizerTree.setSize(800, 500);
+            visualizerTree.forest(trees, "#treeContainer", 5, { title: "🌲 Forêt d'arbres de décision" });
+
+            log("🌲 " + trees.length + " arbres visualisés", "success");
+        }
+
+        // ============================================================
+        // RÉINITIALISATION
+        // ============================================================
+
+        function clearAll() {
+            predictor = null;
+            loadedData = null;
+            currentCols = [];
+            clearLogs();
+            document.getElementById("resultsArea").innerHTML = "<p>Aucun résultat pour l'instant.</p>";
+            document.getElementById("predictionArea").innerHTML = "<p>Aucune prédiction effectuée.</p>";
+            document.getElementById("predictionInputs").innerHTML = '<span style="color:#888;">(Chargez les données d\'abord)</span>';
+            log("🗑️ Tout a été réinitialisé", "info");
+        }
+
+        // ============================================================
+        // INITIALISATION
+        // ============================================================
+
+        log('📄 Page Predictor chargée.', "info");
+        log('🔍 Suivez les étapes 1 à 4 dans l\'ordre.', "info");
+        log('💡 Pas besoin de connaître RandomForest, tout est automatisé !', "success");
+
+        var defaultCols = ["idEnseignant", "idDiscipline", "regime", "idClasse", "nbreHeures", "nbreHeuresTP",
+            "tauxPresence", "moyenneClasse", "nbreEleves", "tauxReussite", "reussite"
+        ];
+
+        console.log("%c🎯 E-CAMSCHOOL - Predictor", "font-size:20px;font-weight:bold;color:#3498db;");
+        console.log("%cPour les décideurs - Prédiction simplifiée", "font-size:14px;color:#2ecc71;");
+    </script>
+
+</body>
+
+</html>

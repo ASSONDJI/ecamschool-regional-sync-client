@@ -514,7 +514,7 @@
                 document.getElementById('label' + selected.value.charAt(0).toUpperCase() + selected.value.slice(1))
                     ?.classList.add('active');
             }
-            log(`📌 Modèle sélectionné : ${currentModelType === 'classifier' ? 'Classifier' : 'Regressor'}`, 'info');
+            log(` Modèle sélectionné : ${currentModelType === 'classifier' ? 'Classifier' : 'Regressor'}`, 'info');
         }
 
         function displayMatrix(matrice) {
