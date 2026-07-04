@@ -134,20 +134,19 @@ tools.AppLib = {
 
         // --------------------------------------------------
         // Exposer le DelegateComponent et le SwRouter
-        // globalement via tools.AppLib pour que app.js
-        // puisse y accéder sans connaître le framework.
-        //
-        // tools.AppLib.delegate  → point d'entrée pour
-        //   toute écriture (create, update, delete)
-        //   depuis les formulaires UI.
-        //
-        // tools.AppLib.swRouter  → accès au SyncManager
-        //   pour afficher le statut de synchronisation.
+        // globalement via tools.AppLib — UNIQUEMENT si l'ancien
+        // mécanisme est encore présent (voir Étape 9 du plan de
+        // migration Service Worker). Depuis cette étape, app.js
+        // n'utilise plus tools.AppLib.delegate : il fait des
+        // appels réseau directs, interceptés par sw.js.
         // --------------------------------------------------
-        tools.AppLib.delegate  = this.swRouter.delegate;
-        tools.AppLib.swRouter  = this.swRouter;
-
-        console.log("[EBackController] delegate et swRouter exposés dans tools.AppLib");
+        if (this.swRouter) {
+            tools.AppLib.delegate  = this.swRouter.delegate;
+            tools.AppLib.swRouter  = this.swRouter;
+            console.log("[EBackController] delegate et swRouter exposés dans tools.AppLib (ancien mécanisme encore présent)");
+        } else {
+            console.log("[EBackController] Ancien mécanisme SwRouter absent — gestion offline déléguée au Service Worker.");
+        }
     }
 
 };

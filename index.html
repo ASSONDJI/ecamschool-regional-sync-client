@@ -19,13 +19,20 @@
             <button class="tab-button active" data-tab="users">👥 Utilisateurs</button>
             <button class="tab-button" data-tab="establishments">🏛️ Établissements</button>
             <button class="tab-button" data-tab="matrices">📊 Données en attente</button>
+            <button class="tab-button" data-tab="dashboard">📈 Tableau de bord</button>
         </nav>
 
 
+        <!-- ============================================================ -->
+        <!-- ONGLET UTILISATEURS                                            -->
+        <!-- ============================================================ -->
         <div id="users-tab" class="tab-content active">
             <div class="card">
                 <h2>➕ Créer un utilisateur</h2>
                 <form id="create-user-form">
+                    <!-- Champ caché pour le mode édition -->
+                    <input type="hidden" id="user-editing-id" value="">
+
                     <div class="form-group">
                         <label>Nom d'utilisateur *</label>
                         <input type="text" id="username" required>
@@ -58,23 +65,30 @@
                         <label>Département</label>
                         <input type="text" id="department" value="Mfoundi">
                     </div>
-                    <button type="submit" class="btn-primary">Créer l'utilisateur</button>
+                    <!-- ID sur le bouton pour changer le texte en mode édition -->
+                    <button type="submit" class="btn-primary" id="user-submit-btn">Créer l'utilisateur</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2> Liste des utilisateurs</h2>
+                <h2>📋 Liste des utilisateurs</h2>
                 <div id="users-list" class="data-list">
-                    <div class="loading"> Chargement des utilisateurs...</div>
+                    <div class="loading">⏳ Chargement des utilisateurs...</div>
                 </div>
             </div>
         </div>
 
 
+        <!-- ============================================================ -->
+        <!-- ONGLET ÉTABLISSEMENTS                                          -->
+        <!-- ============================================================ -->
         <div id="establishments-tab" class="tab-content">
             <div class="card">
                 <h2>➕ Créer un établissement</h2>
                 <form id="create-establishment-form">
+                    <!-- Champ caché pour le mode édition -->
+                    <input type="hidden" id="establishment-editing-id" value="">
+
                     <div class="form-group">
                         <label>Code *</label>
                         <input type="text" id="code" required>
@@ -102,23 +116,32 @@
                             <option value="PRIVATE">PRIVÉ</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-primary">Créer l'établissement</button>
+                    <!-- ID sur le bouton pour changer le texte en mode édition -->
+                    <button type="submit" class="btn-primary" id="establishment-submit-btn">Créer
+                        l'établissement</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2> Liste des établissements</h2>
+                <h2>📋 Liste des établissements</h2>
                 <div id="establishments-list" class="data-list">
-                    <div class="loading"> Chargement des établissements...</div>
+                    <div class="loading">⏳ Chargement des établissements...</div>
                 </div>
             </div>
         </div>
 
 
+        <!-- ============================================================ -->
+        <!-- ONGLET DONNÉES EN ATTENTE                                     -->
+        <!-- ============================================================ -->
         <div id="matrices-tab" class="tab-content">
             <div class="card">
-                <h2>➕ Ajouter des données</h2>
+                <h2 id="matrix-form-title">➕ Ajouter des données</h2>
                 <form id="create-matrix-form">
+                    <!-- Champs cachés pour le mode édition -->
+                    <input type="hidden" id="editingId" value="">
+                    <input type="hidden" id="editingLocalId" value="">
+
                     <div class="form-group">
                         <label>Client Key *</label>
                         <input type="text" id="clientKey" placeholder="ex: client_001" required>
@@ -144,24 +167,167 @@
                         <label>ID Établissement *</label>
                         <input type="number" id="establishmentId" placeholder="ID de l'établissement" required>
                     </div>
-                    <button type="submit" class="btn-primary">Ajouter la donnée</button>
+                    <button type="submit" class="btn-primary" id="matrix-submit-btn">Ajouter la donnée</button>
                 </form>
             </div>
 
             <div class="card">
-                <h2> Données en attente de synchronisation</h2>
+                <h2>📊 Données en attente de synchronisation</h2>
                 <div id="matrices-list" class="data-list">
-                    <div class="loading"> Chargement des données...</div>
+                    <div class="loading">⏳ Chargement des données...</div>
                 </div>
             </div>
         </div>
 
+        <!-- ============================================================ -->
+        <!-- SECTION TABLEAU DE BORD -->
+        <!-- ============================================================ -->
+        <section id="dashboard-tab" class="tab-content">
+            <h2>📈 Tableau de bord - Matrices</h2>
+
+            <!-- Message d'information -->
+            <div id="dashboard-message" class="message" style="display:none;"></div>
+
+            <!-- Contrôles globaux -->
+            <div class="dashboard-controls">
+                <button id="refresh-dashboard" class="btn-refresh">🔄 Rafraîchir</button>
+                <button id="export-all-excel" class="btn-export-all">📥 Exporter tout en Excel</button>
+                <span id="dashboard-badge" class="badge">3 matrices</span>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- MATRICE USERS -->
+            <!-- ============================================================ -->
+            <div class="matrix-section">
+                <div class="matrix-header">
+                    <h3>👤 Matrice Utilisateurs</h3>
+                    <div class="matrix-controls">
+                        <input type="text" class="matrix-filter" data-matrix="users" placeholder="🔍 Filtrer..." />
+                        <select class="matrix-groupby" data-matrix="users">
+                            <option value="">Aucun regroupement</option>
+                            <option value="role">Regrouper par rôle</option>
+                            <option value="delegationRegion">Regrouper par région</option>
+                            <option value="department">Regrouper par département</option>
+                        </select>
+                        <button class="btn-export-matrix" data-matrix="users">📥 Exporter</button>
+                        <span class="matrix-count" data-matrix="users">0 lignes</span>
+                    </div>
+                </div>
+                <div class="matrix-container">
+                    <table id="matrix-users" class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th data-col="id">ID</th>
+                                <th data-col="username">Nom d'utilisateur</th>
+                                <th data-col="fullName">Nom complet</th>
+                                <th data-col="email">Email</th>
+                                <th data-col="role">Rôle</th>
+                                <th data-col="delegationRegion">Région</th>
+                                <th data-col="department">Département</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Les données seront chargées par JavaScript -->
+                            <tr>
+                                <td colspan="7" class="loading">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- MATRICE ESTABLISHMENTS -->
+            <!-- ============================================================ -->
+            <div class="matrix-section">
+                <div class="matrix-header">
+                    <h3>🏛️ Matrice Établissements</h3>
+                    <div class="matrix-controls">
+                        <input type="text" class="matrix-filter" data-matrix="establishments"
+                            placeholder="🔍 Filtrer..." />
+                        <select class="matrix-groupby" data-matrix="establishments">
+                            <option value="">Aucun regroupement</option>
+                            <option value="type">Regrouper par type</option>
+                            <option value="city">Regrouper par ville</option>
+                            <option value="delegationRegion">Regrouper par région</option>
+                            <option value="department">Regrouper par département</option>
+                        </select>
+                        <button class="btn-export-matrix" data-matrix="establishments">📥 Exporter</button>
+                        <span class="matrix-count" data-matrix="establishments">0 lignes</span>
+                    </div>
+                </div>
+                <div class="matrix-container">
+                    <table id="matrix-establishments" class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th data-col="id">ID</th>
+                                <th data-col="code">Code</th>
+                                <th data-col="name">Nom</th>
+                                <th data-col="city">Ville</th>
+                                <th data-col="type">Type</th>
+                                <th data-col="delegationRegion">Région</th>
+                                <th data-col="department">Département</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="loading">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- MATRICE ENSEIGNEMENTS -->
+            <!-- ============================================================ -->
+            <div class="matrix-section">
+                <div class="matrix-header">
+                    <h3>📚 Matrice Enseignements</h3>
+                    <div class="matrix-controls">
+                        <input type="text" class="matrix-filter" data-matrix="enseignements"
+                            placeholder="🔍 Filtrer..." />
+                        <select class="matrix-groupby" data-matrix="enseignements">
+                            <option value="">Aucun regroupement</option>
+                            <option value="regime">Regrouper par régime</option>
+                            <option value="portee">Regrouper par portée</option>
+                            <option value="anneeAcad">Regrouper par année</option>
+                        </select>
+                        <button class="btn-export-matrix" data-matrix="enseignements">📥 Exporter</button>
+                        <span class="matrix-count" data-matrix="enseignements">0 lignes</span>
+                    </div>
+                </div>
+                <div class="matrix-container">
+                    <table id="matrix-enseignements" class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th data-col="id">ID</th>
+                                <th data-col="idEnseignant">ID Enseignant</th>
+                                <th data-col="idDiscipline">ID Discipline</th>
+                                <th data-col="idClasse">ID Classe</th>
+                                <th data-col="regime">Régime</th>
+                                <th data-col="nbreHeures">Nb Heures</th>
+                                <th data-col="nbreHeuresTP">Nb Heures TP</th>
+                                <th data-col="anneeAcad">Année</th>
+                                <th data-col="portee">Portée</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="9" class="loading">Chargement...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
         <div id="message" class="message"></div>
         <div id="sync-badge"
             style="display:none; background:#f59e0b; color:white; padding:8px 16px; border-radius:6px; margin:8px 0; font-size:14px; text-align:center;">
             ⏳ données en attente de synchronisation
         </div>
     </div>
+
     <!-- ÉTAPE 1 : jQuery (déjà présent dans le projet) -->
     <script src="js/jquery.js"></script>
 
@@ -179,32 +345,18 @@
 
     <script src="js/tools-3.5.library.IDBManager.js"></script>
     <script src="js/tools-3.5.library.IDBManager.test.js"></script>
-
-    <!-- ÉTAPE 6 : ★ NOUVEAU — ProxyDAO -->
-    <!--           Doit venir APRÈS DAOContainer -->
-    <script src="js/tools-3.5.library.ProxyDAO.js"></script>
-
-    <script src="js/tools-3.5.library.SyncManager.js"></script>
-
-    <!-- ÉTAPE 7 : ★ NOUVEAU — SwRouter -->
-    <!--           Doit venir APRÈS ProxyDAO -->
-    <script src="js/tools-3.5.library.SwRouter.js"></script>
-
-    <!-- ÉTAPE 8 : AppLib (existant, avec ajout Enseignement) -->
     <script src="js/tools-3.5.AppLib.js"></script>
-
-    <!-- ÉTAPE 9 : Controller (existant, inchangé) -->
     <script src="js/tools-3.5.controller.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
+    <script src="js/FileSaver.min.js"></script>
+    <script src="js/app.js"></script>
 
-    <!-- ÉTAPE 10 : Démarrage de l'application -->
-     <script src="js/app.js"></script>
     <script>
         $(document).ready(function () {
             let app = new tools.Applications.Frontend.FrontendApplication();
             app.run();
         });
     </script>
-
 
 </body>
 

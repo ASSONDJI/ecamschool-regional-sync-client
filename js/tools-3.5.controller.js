@@ -37,40 +37,41 @@ tools.Applications.Frontend.Modules.Rh = {
                 console.warn("[RhController] Données manquantes.");
                 return;
             }
+            if (window.DEBUG_MODE) {
+                // Matrice Users
+                let matriceUsers = new tools.Library.Stats.Matrice();
+                for (let i = 0; i < users.length; i++) {
+                    matriceUsers.setElement(users[i].getData().username, "username", i);
+                    matriceUsers.setElement(users[i].getData().role, "role", i);
+                }
+                console.log("===== MATRICE USERS =====");
+                console.log(matriceUsers);
 
-            // Matrice Users
-            let matriceUsers = new tools.Library.Stats.Matrice();
-            for (let i = 0; i < users.length; i++) {
-                matriceUsers.setElement(users[i].getData().username, "username", i);
-                matriceUsers.setElement(users[i].getData().role, "role", i);
+                // Matrice Establishments
+                let matriceEstablishments = new tools.Library.Stats.Matrice();
+                for (let i = 0; i < establishments.length; i++) {
+                    matriceEstablishments.setElement(establishments[i].getData().name, "name", i);
+                    matriceEstablishments.setElement(establishments[i].getData().city, "city", i);
+                }
+                console.log("===== MATRICE ESTABLISHMENTS =====");
+                console.log(matriceEstablishments);
+
+                // Matrice Enseignements
+                console.log("===== ENSEIGNEMENTS =====");
+                console.log(enseignements);
+
+                let matriceEnseignements = new tools.Library.Stats.Matrice();
+                for (let i = 0; i < enseignements.length; i++) {
+                    matriceEnseignements.setElement(enseignements[i].idEnseignant(), "idEnseignant", i);
+                    matriceEnseignements.setElement(enseignements[i].idDiscipline(), "idDiscipline", i);
+                    matriceEnseignements.setElement(enseignements[i].idClasse(), "idClasse", i);
+                    matriceEnseignements.setElement(enseignements[i].regime(), "regime", i);
+                    matriceEnseignements.setElement(enseignements[i].anneeAcad(), "anneeAcad", i);
+                    matriceEnseignements.setElement(enseignements[i].portee(), "portee", i);
+                }
+                console.log("===== MATRICE ENSEIGNEMENTS =====");
+                console.log(matriceEnseignements);
             }
-            console.log("===== MATRICE USERS =====");
-            console.log(matriceUsers);
-
-            // Matrice Establishments
-            let matriceEstablishments = new tools.Library.Stats.Matrice();
-            for (let i = 0; i < establishments.length; i++) {
-                matriceEstablishments.setElement(establishments[i].getData().name, "name", i);
-                matriceEstablishments.setElement(establishments[i].getData().city, "city", i);
-            }
-            console.log("===== MATRICE ESTABLISHMENTS =====");
-            console.log(matriceEstablishments);
-
-            // Matrice Enseignements
-            console.log("===== ENSEIGNEMENTS =====");
-            console.log(enseignements);
-
-            let matriceEnseignements = new tools.Library.Stats.Matrice();
-            for (let i = 0; i < enseignements.length; i++) {
-                matriceEnseignements.setElement(enseignements[i].idEnseignant(), "idEnseignant", i);
-                matriceEnseignements.setElement(enseignements[i].idDiscipline(), "idDiscipline", i);
-                matriceEnseignements.setElement(enseignements[i].idClasse(), "idClasse", i);
-                matriceEnseignements.setElement(enseignements[i].regime(), "regime", i);
-                matriceEnseignements.setElement(enseignements[i].anneeAcad(), "anneeAcad", i);
-                matriceEnseignements.setElement(enseignements[i].portee(), "portee", i);
-            }
-            console.log("===== MATRICE ENSEIGNEMENTS =====");
-            console.log(matriceEnseignements);
         };
     },
 

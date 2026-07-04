@@ -16,7 +16,7 @@ body {
     margin: 0 auto;
     background: white;
     border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     overflow: hidden;
 }
 
@@ -86,7 +86,7 @@ nav {
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 30px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .card h2 {
@@ -126,7 +126,7 @@ nav {
 .form-group textarea:focus {
     outline: none;
     border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .form-group textarea {
@@ -150,7 +150,7 @@ nav {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .btn-primary:active {
@@ -239,6 +239,7 @@ nav {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -250,53 +251,53 @@ nav {
     body {
         padding: 10px;
     }
-    
+
     header {
         padding: 20px;
     }
-    
+
     header h1 {
         font-size: 1.4rem;
     }
-    
+
     header p {
         font-size: 0.85rem;
     }
-    
+
     .tab-button {
         min-width: 100px;
         padding: 12px 15px;
         font-size: 0.85rem;
     }
-    
+
     .tab-content {
         padding: 20px;
     }
-    
+
     .card {
         padding: 15px;
     }
-    
+
     .card h2 {
         font-size: 1.1rem;
     }
-    
+
     .form-group input,
     .form-group select,
     .form-group textarea {
         padding: 8px;
         font-size: 0.85rem;
     }
-    
+
     .btn-primary {
         padding: 10px 20px;
     }
-    
+
     .data-item {
         font-size: 0.75rem;
         padding: 10px;
     }
-    
+
     .message {
         bottom: 10px;
         right: 10px;
@@ -310,13 +311,291 @@ nav {
     nav {
         flex-direction: column;
     }
-    
+
     .tab-button {
         width: 100%;
         border-bottom: 1px solid #e9ecef;
     }
-    
+
     .tab-button.active {
         border-bottom: 2px solid #3498db;
+    }
+
+    /* Contrôles du tableau de bord */
+    .dashboard-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 25px;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .btn-refresh {
+        padding: 8px 16px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .btn-refresh:hover {
+        background: #2563eb;
+    }
+
+    .btn-export-all {
+        padding: 8px 16px;
+        background: #22c55e;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .btn-export-all:hover {
+        background: #16a34a;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: #64748b;
+        color: white;
+        border-radius: 20px;
+        font-size: 13px;
+    }
+
+    /* Sections des matrices */
+    .matrix-section {
+        margin-bottom: 35px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .matrix-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        background: #f1f5f9;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .matrix-header h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .matrix-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .matrix-controls .matrix-filter {
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        width: 180px;
+        transition: border-color 0.2s;
+    }
+
+    .matrix-controls .matrix-filter:focus {
+        border-color: #3b82f6;
+        outline: none;
+    }
+
+    .matrix-controls .matrix-groupby {
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .btn-export-matrix {
+        padding: 6px 14px;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background 0.2s;
+    }
+
+    .btn-export-matrix:hover {
+        background: #7c3aed;
+    }
+
+    .matrix-count {
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    /* Conteneur du tableau */
+    .matrix-container {
+        overflow-x: auto;
+        padding: 0;
+    }
+
+    /* Tableaux des matrices */
+    .matrix-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .matrix-table thead th {
+        background: #f8fafc;
+        color: #1e293b;
+        font-weight: 600;
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 2px solid #e2e8f0;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .matrix-table thead th:hover {
+        background: #e9edf2;
+    }
+
+    .matrix-table thead th.sorted-asc::after {
+        content: " ▲";
+        font-size: 10px;
+        color: #3b82f6;
+    }
+
+    .matrix-table thead th.sorted-desc::after {
+        content: " ▼";
+        font-size: 10px;
+        color: #3b82f6;
+    }
+
+    .matrix-table tbody td {
+        padding: 9px 14px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .matrix-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .matrix-table tbody tr:nth-child(even) {
+        background: #fafbfc;
+    }
+
+    .matrix-table tbody tr:nth-child(even):hover {
+        background: #f1f5f9;
+    }
+
+    /* Lignes de regroupement */
+    .matrix-table tbody tr.group-header {
+        background: #f1f5f9 !important;
+        font-weight: 600;
+    }
+
+    .matrix-table tbody tr.group-header td {
+        padding: 8px 14px;
+        color: #1e293b;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .matrix-table .loading {
+        text-align: center;
+        color: #94a3b8;
+        padding: 30px !important;
+    }
+
+    .matrix-table .no-data {
+        text-align: center;
+        color: #94a3b8;
+        padding: 20px !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .matrix-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .matrix-controls {
+            flex-wrap: wrap;
+        }
+
+        .matrix-controls .matrix-filter {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .dashboard-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .matrix-table {
+            font-size: 12px;
+        }
+
+        .matrix-table thead th,
+        .matrix-table tbody td {
+            padding: 6px 8px;
+        }
+    }
+
+    /* Styles pour les statistiques résumées */
+    .matrix-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 8px 18px 14px 18px;
+        background: #fafbfc;
+        border-top: 1px solid #e2e8f0;
+        font-size: 13px;
+        color: #475569;
+    }
+
+    .matrix-stats .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .matrix-stats .stat-item .stat-label {
+        font-weight: 500;
+    }
+
+    .matrix-stats .stat-item .stat-value {
+        color: #1e293b;
+        font-weight: 600;
     }
 }
