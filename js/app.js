@@ -37,6 +37,20 @@ let pendingEditingTable = null;   // table pour l'édition d'un PENDING
 window._matrices = {};
 
 // ----------------------------------------------------------
+// escapeHtml()
+// Rôle : Échappe les caractères HTML pour éviter les XSS.
+// ----------------------------------------------------------
+function escapeHtml(str) {
+    if (str === null || str === undefined || str === '') return '';
+    str = String(str);
+    return str.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// ----------------------------------------------------------
 // showMessage()
 // Rôle : afficher un message temporaire à l'écran.
 // ----------------------------------------------------------
@@ -166,15 +180,22 @@ function createUser() {
         return;
     }
 
+    //  NETTOYAGE : trim() et validation des données
     const userData = {
-        username: document.getElementById('username').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        fullName: document.getElementById('fullName').value,
-        role: document.getElementById('role').value,
-        delegationRegion: document.getElementById('delegationRegion').value,
-        department: document.getElementById('department').value
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        fullName: document.getElementById('fullName').value.trim(),
+        role: document.getElementById('role').value.trim(),
+        delegationRegion: document.getElementById('delegationRegion').value.trim(),
+        department: document.getElementById('department').value.trim()
     };
+
+    //  VALIDATION : vérifier que les champs obligatoires ne sont pas vides
+    if (!userData.username || !userData.email) {
+        showMessage('Le nom d\'utilisateur et l\'email sont obligatoires.', 'error');
+        return;
+    }
 
     apiRequest('/users', 'POST', userData).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -199,10 +220,29 @@ function createUser() {
 // deleteUser()
 // Rôle : supprimer un utilisateur
 // ----------------------------------------------------------
+// ----------------------------------------------------------
+// deleteUser()
+// Rôle : supprimer un utilisateur
+// ★ MODIFICATION : Attendre la notification CACHE_UPDATED
+// ----------------------------------------------------------
 function deleteUser(id) {
     if (!confirm('Supprimer définitivement cet utilisateur ?')) {
         return;
     }
+
+    // ★ AJOUT : Indicateur pour savoir si la notification a été reçue
+    var cacheUpdatedReceived = false;
+
+    // ★ AJOUT : Écouteur temporaire pour CACHE_UPDATED
+    var onCacheUpdated = function (event) {
+        if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'User') {
+            cacheUpdatedReceived = true;
+            console.log("[app.js] CACHE_UPDATED reçu pour User - rechargement...");
+            loadUsers();
+            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+        }
+    };
+    navigator.serviceWorker.addEventListener('message', onCacheUpdated);
 
     apiRequest('/users', 'DELETE', { id: id }).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -211,9 +251,22 @@ function deleteUser(id) {
             showMessage('Utilisateur supprimé avec succès !');
         }
         updateSyncBadge();
-        loadUsers();
+
+        // ★ MODIFICATION : NE PAS APPELER loadUsers() ici
+        // loadUsers(); ← SUPPRIMER CETTE LIGNE
+
+        // ★ AJOUT : Fallback si la notification n'arrive pas dans les 2 secondes
+        setTimeout(function () {
+            if (!cacheUpdatedReceived) {
+                console.log("[app.js] Fallback - rechargement forcé après délai.");
+                loadUsers();
+                navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+            }
+        }, 2000);
     }).catch(function (error) {
         showMessage('Erreur suppression : ' + error, 'error');
+        navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+        loadUsers();
     });
 }
 
@@ -224,15 +277,21 @@ function deleteUser(id) {
 function updateUser(id) {
     const userData = {
         id: parseInt(id),
-        username: document.getElementById('username').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        fullName: document.getElementById('fullName').value,
-        role: document.getElementById('role').value,
-        delegationRegion: document.getElementById('delegationRegion').value,
-        department: document.getElementById('department').value,
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value.trim(),
+        fullName: document.getElementById('fullName').value.trim(),
+        role: document.getElementById('role').value.trim(),
+        delegationRegion: document.getElementById('delegationRegion').value.trim(),
+        department: document.getElementById('department').value.trim(),
         isActive: true
     };
+
+    //  VALIDATION : vérifier que les champs obligatoires ne sont pas vides
+    if (!userData.username || !userData.email) {
+        showMessage('Le nom d\'utilisateur et l\'email sont obligatoires.', 'error');
+        return;
+    }
 
     apiRequest('/users', 'PUT', userData).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -307,14 +366,21 @@ function createEstablishment() {
         return;
     }
 
+    // NETTOYAGE : trim() et validation
     const data = {
-        code: document.getElementById('code').value,
-        name: document.getElementById('name').value,
-        city: document.getElementById('city').value,
-        department: document.getElementById('dept').value,
-        delegationRegion: document.getElementById('region').value,
-        type: document.getElementById('type').value
+        code: document.getElementById('code').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        department: document.getElementById('dept').value.trim(),
+        delegationRegion: document.getElementById('region').value.trim(),
+        type: document.getElementById('type').value.trim()
     };
+
+    if (!data.code || !data.name) {
+        showMessage('Le code et le nom sont obligatoires.', 'error');
+        return;
+    }
+
 
     apiRequest('/establishments', 'POST', data).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -339,10 +405,27 @@ function createEstablishment() {
 // deleteEstablishment()
 // Rôle : supprimer un établissement
 // ----------------------------------------------------------
+// ----------------------------------------------------------
+// deleteEstablishment()
+// Rôle : supprimer un établissement
+// ★ MODIFICATION : Attendre la notification CACHE_UPDATED
+// ----------------------------------------------------------
 function deleteEstablishment(id) {
     if (!confirm('Supprimer définitivement cet établissement ?')) {
         return;
     }
+
+    var cacheUpdatedReceived = false;
+
+    var onCacheUpdated = function (event) {
+        if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'Establishment') {
+            cacheUpdatedReceived = true;
+            console.log("[app.js] CACHE_UPDATED reçu pour Establishment - rechargement...");
+            loadEstablishments();
+            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+        }
+    };
+    navigator.serviceWorker.addEventListener('message', onCacheUpdated);
 
     apiRequest('/establishments', 'DELETE', { id: id }).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -351,9 +434,18 @@ function deleteEstablishment(id) {
             showMessage('Établissement supprimé avec succès !');
         }
         updateSyncBadge();
-        loadEstablishments();
+
+        setTimeout(function () {
+            if (!cacheUpdatedReceived) {
+                console.log("[app.js] Fallback - rechargement forcé après délai.");
+                loadEstablishments();
+                navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+            }
+        }, 2000);
     }).catch(function (error) {
         showMessage('Erreur suppression : ' + error, 'error');
+        navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+        loadEstablishments();
     });
 }
 
@@ -364,13 +456,18 @@ function deleteEstablishment(id) {
 function updateEstablishment(id) {
     const data = {
         id: parseInt(id),
-        code: document.getElementById('code').value,
-        name: document.getElementById('name').value,
-        city: document.getElementById('city').value,
-        department: document.getElementById('dept').value,
-        delegationRegion: document.getElementById('region').value,
-        type: document.getElementById('type').value
+        code: document.getElementById('code').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        city: document.getElementById('city').value.trim(),
+        department: document.getElementById('dept').value.trim(),
+        delegationRegion: document.getElementById('region').value.trim(),
+        type: document.getElementById('type').value.trim()
     };
+
+    if (!data.code || !data.name) {
+        showMessage('Le code et le nom sont obligatoires.', 'error');
+        return;
+    }
 
     apiRequest('/establishments', 'PUT', data).then(function (reponse) {
         if (reponse && reponse.queued) {
@@ -715,14 +812,15 @@ function updatePendingRecord(table, localId) {
 
     switch (table) {
         case 'User':
+            // NETTOYAGE : trim() pour les données PENDING
             newData = {
-                username: document.getElementById('username').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                fullName: document.getElementById('fullName').value,
-                role: document.getElementById('role').value,
-                delegationRegion: document.getElementById('delegationRegion').value,
-                department: document.getElementById('department').value
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                password: document.getElementById('password').value.trim(),
+                fullName: document.getElementById('fullName').value.trim(),
+                role: document.getElementById('role').value.trim(),
+                delegationRegion: document.getElementById('delegationRegion').value.trim(),
+                department: document.getElementById('department').value.trim()
             };
             break;
         case 'Establishment':
@@ -1424,6 +1522,27 @@ function setupDashboardEvents() {
 }
 
 // ----------------------------------------------------------
+// registerServiceWorker()
+// Rôle : enregistrer sw.js auprès du navigateur.
+// ----------------------------------------------------------
+function registerServiceWorker() {
+
+    if (!("serviceWorker" in navigator)) {
+        console.warn("[app.js] Ce navigateur ne supporte pas les Service Workers.");
+        return;
+    }
+
+    navigator.serviceWorker.register("/sw.js")
+        .then(function (registration) {
+            console.log("[app.js] Service Worker enregistré avec succès. Portée :", registration.scope);
+        })
+        .catch(function (error) {
+            console.error("[app.js] Échec de l'enregistrement du Service Worker :", error);
+            console.error("[app.js] Vérifie que la page est servie via http://localhost et pas via file://");
+        });
+}
+
+// ----------------------------------------------------------
 // refreshMatrix()
 // Rôle : Recharge une matrice avec les filtres actuels
 // ----------------------------------------------------------
@@ -1499,51 +1618,281 @@ function sortMatrixTable(matrixId, colKey) {
 }
 
 // ============================================================
-// Onglets + démarrage
+// SYNCHRONISATION MATRICE ↔ CACHE 
 // ============================================================
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-button').forEach(function (btn) {
-        btn.classList.toggle('active', btn.dataset.tab === tabName);
-    });
-    document.querySelectorAll('.tab-content').forEach(function (content) {
-        content.classList.remove('active');
-    });
-    document.getElementById(tabName + '-tab').classList.add('active');
-    currentTab = tabName;
-    if (tabName === 'users') loadUsers();
-    else if (tabName === 'establishments') loadEstablishments();
-    else if (tabName === 'matrices') loadMatrices();
-    else if (tabName === 'dashboard') loadDashboard();
-}
-
-function escapeHtml(str) {
-    if (str === null || str === undefined || str === '') return '';
-    str = String(str);
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
 
 // ----------------------------------------------------------
-// registerServiceWorker()
-// Rôle : enregistrer sw.js auprès du navigateur.
+// synchroniserMatrice()
+// Rôle : Point d'entrée principal pour la synchronisation
+//        de la matrice avec le cache.
 // ----------------------------------------------------------
-function registerServiceWorker() {
+// ----------------------------------------------------------
+// synchroniserMatrice()
+// Rôle : Point d'entrée principal pour la synchronisation
+//        de la matrice avec le cache.
+// ★ MODIFICATION : Créer la matrice si elle n'existe pas
+// ----------------------------------------------------------
+function synchroniserMatrice(table, data, operation, id) {
+    console.log("[app.js] synchroniserMatrice() → table:", table, "| operation:", operation, "| id:", id);
 
-    if (!("serviceWorker" in navigator)) {
-        console.warn("[app.js] Ce navigateur ne supporte pas les Service Workers.");
+    if (!table || !data) {
+        console.warn("[app.js] synchroniserMatrice() — données manquantes.");
         return;
     }
 
-    navigator.serviceWorker.register("/sw.js")
-        .then(function (registration) {
-            console.log("[app.js] Service Worker enregistré avec succès. Portée :", registration.scope);
-        })
-        .catch(function (error) {
-            console.error("[app.js] Échec de l'enregistrement du Service Worker :", error);
-            console.error("[app.js] Vérifie que la page est servie via http://localhost et pas via file://");
-        });
+    // Déterminer l'ID de la matrice dans window._matrices
+    var matrixId = table.toLowerCase();
+    if (matrixId === 'datamatrix') matrixId = 'dataMatrix';
+    else if (matrixId === 'user') matrixId = 'users';
+    else if (matrixId === 'establishment') matrixId = 'establishments';
+    else matrixId = matrixId + 's';
+
+    // ★ NOUVEAU : Si la matrice n'existe pas, la créer avec les données
+    if (!window._matrices || !window._matrices[matrixId]) {
+        console.log("[app.js] synchroniserMatrice() — matrice non trouvée, création pour :", matrixId);
+
+        // Créer une nouvelle matrice
+        var nouvelleMatrice = new tools.Library.Stats.Matrice();
+
+        // Remplir avec les données (si disponibles)
+        if (data && data.length > 0) {
+            var premier = data[0];
+            var colonnesData = Object.keys(premier);
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                var itemId = item.id || i;
+                for (var j = 0; j < colonnesData.length; j++) {
+                    var col = colonnesData[j];
+                    var val = item[col];
+                    if (val !== undefined && val !== null) {
+                        nouvelleMatrice.setElement(val, col, itemId);
+                    }
+                }
+            }
+        }
+
+        // Stocker la matrice
+        if (!window._matrices) window._matrices = {};
+        window._matrices[matrixId] = nouvelleMatrice;
+
+        console.log("[app.js] synchroniserMatrice() — matrice créée pour :", matrixId, "avec", data ? data.length : 0, "éléments");
+    }
+
+    var matrice = window._matrices[matrixId];
+    if (!matrice) {
+        console.warn("[app.js] synchroniserMatrice() — impossible de créer la matrice pour :", matrixId);
+        return;
+    }
+
+    // Appliquer la mise à jour selon l'opération
+    switch (operation) {
+        case "GET":
+            remplacerMatrice(matrice, data);
+            break;
+        case "POST":
+            ajouterDansMatrice(matrice, data);
+            break;
+        case "PUT":
+            mettreAJourDansMatrice(matrice, data, id);
+            break;
+        case "DELETE":
+            supprimerDeMatrice(matrice, id);
+            break;
+        default:
+            console.warn("[app.js] synchroniserMatrice() — opération inconnue :", operation);
+    }
+
+    // Invalider l'index pour getUnique()
+    if (matrice && typeof matrice.invalidateIndex === 'function') {
+        matrice.invalidateIndex();
+    }
 }
 
+// ----------------------------------------------------------
+// remplacerMatrice()
+// Rôle : Remplace toutes les données de la matrice.
+//        Utilisé pour un GET complet.
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+// remplacerMatrice()
+// Rôle : Remplace toutes les données de la matrice.
+//        Utilisé pour un GET complet.
+// ★ VERSION SIMPLIFIÉE - NE NÉCESSITE PAS clear()
+// ----------------------------------------------------------
+function remplacerMatrice(matrice, data) {
+    if (!matrice) {
+        console.warn("[app.js] remplacerMatrice() — matrice invalide.");
+        return;
+    }
+
+    console.log("[app.js] remplacerMatrice() —", data ? data.length : 0, "éléments");
+
+    // 1. Vider la matrice manuellement
+    // On réinitialise les attributs internes de la matrice
+    matrice.elements = new Map();
+    matrice._groupIndexColsNames = [];
+    matrice._countGroupIndexColsNamesOccurences = {};
+    matrice._buildIndexContent = {};
+    matrice.colonnes = [];
+    matrice.colonnesTypes = [];
+    matrice.colonnesLabels = [];
+    matrice.lignes = [];
+    matrice.filter = [];
+    matrice.groupPolice = [];
+    matrice.colsBuildIndexs = [];
+
+    // 2. Ajouter les nouvelles données
+    if (data && data.length > 0) {
+        var premier = data[0];
+        var colonnesData = Object.keys(premier);
+
+        for (var i = 0; i < data.length; i++) {
+            var item = data[i];
+            var id = item.id || i;
+            for (var j = 0; j < colonnesData.length; j++) {
+                var col = colonnesData[j];
+                var val = item[col];
+                if (val !== undefined && val !== null) {
+                    matrice.setElement(val, col, id);
+                }
+            }
+        }
+    }
+
+    // 3. Invalider l'index pour getUnique()
+    if (typeof matrice.invalidateIndex === 'function') {
+        matrice.invalidateIndex();
+    }
+
+    console.log("[app.js] remplacerMatrice() — matrice mise à jour :", matrice.getLignes().length, "lignes");
+}
+// ----------------------------------------------------------
+// ajouterDansMatrice()
+// Rôle : Ajoute une nouvelle entité dans la matrice.
+//        Utilisé pour un POST.
+// ----------------------------------------------------------
+function ajouterDansMatrice(matrice, data) {
+    if (!matrice || !data) return;
+
+    console.log("[app.js] ajouterDansMatrice() —", data);
+
+    // Si data est un tableau, ajouter chaque élément
+    var items = Array.isArray(data) ? data : [data];
+
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var id = item.id || 'new_' + Date.now() + '_' + i;
+
+        var colonnes = Object.keys(item);
+        for (var j = 0; j < colonnes.length; j++) {
+            var col = colonnes[j];
+            var val = item[col];
+            if (val !== undefined && val !== null) {
+                matrice.setElement(val, col, id);
+            }
+        }
+    }
+    if (typeof matrice.invalidateIndex === 'function') {
+        matrice.invalidateIndex();
+    }
+    console.log("[app.js] ajouterDansMatrice() —", items.length, "élément(s) ajouté(s)");
+}
+
+// ----------------------------------------------------------
+// mettreAJourDansMatrice()
+// Rôle : Met à jour une entité existante dans la matrice.
+//        Utilisé pour un PUT.
+// ----------------------------------------------------------
+function mettreAJourDansMatrice(matrice, data, id) {
+    if (!matrice || !data) return;
+
+    // Si data est un tableau, prendre le premier élément
+    var item = Array.isArray(data) ? data[0] : data;
+    var entityId = id || item.id;
+
+    if (!entityId) {
+        console.warn("[app.js] mettreAJourDansMatrice() — id manquant.");
+        return;
+    }
+
+    console.log("[app.js] mettreAJourDansMatrice() — id:", entityId, "| data:", item);
+
+    // Mettre à jour chaque colonne
+    var colonnes = Object.keys(item);
+    for (var i = 0; i < colonnes.length; i++) {
+        var col = colonnes[i];
+        var val = item[col];
+        if (val !== undefined && val !== null) {
+            matrice.setElement(val, col, entityId);
+        }
+    }
+    if (typeof matrice.invalidateIndex === 'function') {
+        matrice.invalidateIndex();
+    }
+
+    console.log("[app.js] mettreAJourDansMatrice() — entrée mise à jour :", entityId);
+}
+
+// ----------------------------------------------------------
+// supprimerDeMatrice()
+// Rôle : Supprime une entité de la matrice.
+//        Utilisé pour un DELETE.
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+// supprimerDeMatrice()
+// Rôle : Supprime une entité de la matrice.
+//        Utilisé pour un DELETE.
+// ----------------------------------------------------------
+// ----------------------------------------------------------
+// supprimerDeMatrice()
+// Rôle : Supprime une entité de la matrice.
+//        Utilisé pour un DELETE.
+// ★ VERSION SIMPLIFIÉE - UTILISE remplacerMatrice()
+// ----------------------------------------------------------
+function supprimerDeMatrice(matrice, id) {
+    if (!matrice || !id) return;
+
+    console.log("[app.js] supprimerDeMatrice() — id:", id);
+
+    // 1. Récupérer toutes les lignes
+    var lignes = matrice.getLignes();
+    var colonnes = matrice.getColonnes();
+
+    // 2. Filtrer pour garder toutes les lignes SAUF celle à supprimer
+    var nouvellesLignes = [];
+    for (var i = 0; i < lignes.length; i++) {
+        var ligne = lignes[i];
+        if (String(ligne) !== String(id)) {
+            nouvellesLignes.push(ligne);
+        }
+    }
+
+    // 3. Si aucune ligne restante, on remplace par un tableau vide
+    if (nouvellesLignes.length === 0) {
+        remplacerMatrice(matrice, []);
+        return;
+    }
+
+    // 4. Reconstruire les données à conserver
+    var donnees = [];
+    for (var i = 0; i < nouvellesLignes.length; i++) {
+        var ligne = nouvellesLignes[i];
+        var item = { id: ligne };
+        for (var j = 0; j < colonnes.length; j++) {
+            var col = colonnes[j];
+            var val = matrice.getElement(col, ligne);
+            if (val !== undefined && val !== null) {
+                item[col] = val;
+            }
+        }
+        donnees.push(item);
+    }
+
+    // 5. Remplacer la matrice avec les données conservées
+    remplacerMatrice(matrice, donnees);
+
+    console.log("[app.js] supprimerDeMatrice() — id", id, "supprimé,", nouvellesLignes.length, "lignes restantes");
+}
 // ----------------------------------------------------------
 // listenToServiceWorker()
 // Rôle : écouter les messages envoyés par sw.js pour
@@ -1574,14 +1923,60 @@ function listenToServiceWorker() {
                     break;
 
                 case "CACHE_UPDATED":
+                    console.log("[app.js] CACHE_UPDATED reçu :", event.data);
+
+                    // Mettre à jour la matrice correspondante
+                    synchroniserMatrice(
+                        event.data.table,
+                        event.data.data,
+                        event.data.operation,
+                        event.data.id
+                    );
+
+                    // Mettre à jour le badge
                     updateSyncBadge();
-                    // Mettre à jour le dashboard si visible
-                    if (currentTab === 'dashboard') {
-                        refreshMatrix('users');
-                        refreshMatrix('establishments');
-                        refreshMatrix('enseignements');
+
+                    // ★ AMÉLIORATION : Recharger les listes selon l'opération et la table
+                    var table = event.data.table;
+                    var operation = event.data.operation;
+
+                    // Si c'est un POST ou PUT, recharger la liste correspondante
+                    if (operation === 'POST' || operation === 'PUT') {
+                        if (table === 'User') {
+                            console.log("[app.js] Rechargement de la liste des utilisateurs après mise à jour.");
+                            loadUsers();
+                        } else if (table === 'Establishment') {
+                            console.log("[app.js] Rechargement de la liste des établissements après mise à jour.");
+                            loadEstablishments();
+                        } else if (table === 'DataMatrix') {
+                            console.log("[app.js] Rechargement de la liste des données en attente après mise à jour.");
+                            loadMatrices();
+                        }
                     }
-                    console.log("[app.js] Cache mis à jour pour :", event.data.endpoint);
+
+                    // Si c'est un DELETE, recharger également (pour retirer l'élément supprimé)
+                    if (operation === 'DELETE') {
+                        if (table === 'User') {
+                            console.log("[app.js] Rechargement de la liste des utilisateurs après suppression.");
+                            loadUsers();
+                        } else if (table === 'Establishment') {
+                            console.log("[app.js] Rechargement de la liste des établissements après suppression.");
+                            loadEstablishments();
+                        } else if (table === 'DataMatrix') {
+                            console.log("[app.js] Rechargement de la liste des données en attente après suppression.");
+                            loadMatrices();
+                        }
+                    }
+
+                    // Si l'onglet dashboard est actif, rafraîchir l'affichage
+                    if (currentTab === 'dashboard') {
+                        var matrixId = table ? table.toLowerCase() + 's' : null;
+                        if (matrixId && window._matrices && window._matrices[matrixId]) {
+                            refreshMatrix(matrixId);
+                        } else {
+                            loadDashboard();
+                        }
+                    }
                     break;
 
                 default:
@@ -1602,6 +1997,47 @@ function setupOnlineFallback() {
             navigator.serviceWorker.controller.postMessage({ type: "REPLAY_PENDING" });
         }
     });
+}
+
+// ============================================================
+// ONGLETS
+// ============================================================
+
+// ----------------------------------------------------------
+// switchTab()
+// Rôle : Change d'onglet et charge les données correspondantes.
+// ----------------------------------------------------------
+
+function switchTab(tabName) {
+    console.log("[app.js] switchTab() →", tabName);
+
+    // Mettre à jour les boutons d'onglets
+    document.querySelectorAll('.tab-button').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+    });
+
+    // Mettre à jour les contenus d'onglets
+    document.querySelectorAll('.tab-content').forEach(function (content) {
+        content.classList.remove('active');
+    });
+
+    var targetTab = document.getElementById(tabName + '-tab');
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+
+    currentTab = tabName;
+
+    // Charger les données selon l'onglet
+    if (tabName === 'users') {
+        loadUsers();
+    } else if (tabName === 'establishments') {
+        loadEstablishments();
+    } else if (tabName === 'matrices') {
+        loadMatrices();
+    } else if (tabName === 'dashboard') {
+        loadDashboard();
+    }
 }
 
 // ----------------------------------------------------------

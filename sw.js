@@ -75,7 +75,7 @@ if (typeof IdbStore === 'undefined') {
 // ----------------------------------------------------------
 function getCandidates() {
     var candidates = [];
-    
+
     // Créer un candidat IndexedDB (BLEU) pour chaque entité
     for (var i = 0; i < ENTITIES.length; i++) {
         var entity = ENTITIES[i];
@@ -85,27 +85,27 @@ function getCandidates() {
             type: "indexeddb",
             store: IdbStore,
             // Méthodes de délégation vers IdbStore
-            save: function(endpoint, data, operation) {
+            save: function (endpoint, data, operation) {
                 return IdbStore.save(endpoint, data, operation);
             },
-            getPending: function() {
+            getPending: function () {
                 return IdbStore.getPending();
             },
-            markSynced: function(localId, serverData) {
+            markSynced: function (localId, serverData) {
                 return IdbStore.markSynced(localId, serverData);
             },
-            purgeSynced: function(olderThanDays) {
+            purgeSynced: function (olderThanDays) {
                 return IdbStore.purgeSynced(olderThanDays);
             },
-            cacheReadResponse: function(endpoint, data) {
+            cacheReadResponse: function (endpoint, data) {
                 return IdbStore.cacheReadResponse(endpoint, data);
             },
-            getReadCache: function(endpoint) {
+            getReadCache: function (endpoint) {
                 return IdbStore.getReadCache(endpoint);
             }
         });
     }
-    
+
     console.log("[sw.js] getCandidates() →", candidates.length, "candidats créés.");
     return candidates;
 }
@@ -118,7 +118,7 @@ function getCandidates() {
 function choose_route(candidates, request) {
     // Vérifier si le réseau est disponible
     var isOnline = navigator.onLine;
-    
+
     // Si on a une préférence dans la requête, l'utiliser
     if (request && request.headers) {
         var preferOffline = request.headers.get('X-Prefer-Offline');
@@ -126,9 +126,9 @@ function choose_route(candidates, request) {
             isOnline = false;
         }
     }
-    
+
     console.log("[sw.js] choose_route() → isOnline:", isOnline);
-    
+
     if (isOnline) {
         // En ligne → retourner le candidat AJAX (matrice)
         // Note : Dans le Service Worker, nous utilisons le candidat
@@ -290,7 +290,7 @@ function handleApiRequest(request, url) {
 
     // Choisir le bon candidat selon l'état du réseau
     var candidate = choose_route(CANDIDATES, request);
-    
+
     if (candidate) {
         console.log("[sw.js] handleApiRequest() → candidat sélectionné :", candidate._name);
     } else {
@@ -337,10 +337,16 @@ function handleRead(request, url, candidate) {
                             networkResponse.clone().json()
                                 .then(function (data) {
                                     cacheStore.cacheReadResponse(url.pathname, data);
-                                    // Notifier l'UI d'une mise à jour
+
+                                    // ★ AMÉLIORATION : Notification enrichie avec les données
+                                    var table = extractTableFromEndpoint(url.pathname);
                                     notifyClients({
                                         type: "CACHE_UPDATED",
-                                        endpoint: url.pathname
+                                        endpoint: url.pathname,
+                                        table: table,
+                                        operation: "GET",
+                                        data: data,
+                                        timestamp: new Date().toISOString()
                                     });
                                 })
                                 .catch(function () { /* ignore */ });
@@ -498,6 +504,17 @@ function updateReadCacheForWrite(endpoint, serverData, originalData, method) {
 
             // Sauvegarder le cache mis à jour
             IdbStore.cacheReadResponse(endpoint, updatedData).catch(function () { /* ignore */ });
+            // ★ AMÉLIORATION : Notifier la page avec les données enrichies
+            var table = extractTableFromEndpoint(endpoint);
+            notifyClients({
+                type: "CACHE_UPDATED",
+                endpoint: endpoint,
+                table: table,
+                operation: method,
+                data: updatedData,
+                id: originalData ? originalData.id : (serverData ? serverData.id : null),
+                timestamp: new Date().toISOString()
+            });
         }
     }).catch(function () { /* ignore */ });
 }
@@ -628,8 +645,19 @@ function sendOneRecord(record) {
 // Informe toutes les pages ouvertes qu'un évènement de
 // synchronisation a eu lieu, pour qu'elles rafraîchissent
 // leur affichage (badge, listes).
+//
+// ★ AMÉLIORATION : Messages enrichis pour la synchronisation
+//                  de la matrice (PHASE 6)
 // ----------------------------------------------------------
 function notifyClients(message) {
+    // Si le message est de type CACHE_UPDATED, l'enrichir avec
+    // des informations supplémentaires pour la matrice
+    if (message && message.type === "CACHE_UPDATED") {
+        // Le message doit déjà contenir les données enrichies
+        // envoyées par les fonctions appelantes
+        console.log("[sw.js] notifyClients() → CACHE_UPDATED enrichi :", message);
+    }
+
     self.clients.matchAll().then(function (clients) {
         clients.forEach(function (client) {
             client.postMessage(message);
