@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Camschool Regional Sync</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
 </head>
 
 <body>
@@ -20,6 +22,7 @@
             <button class="tab-button" data-tab="establishments">🏛️ Établissements</button>
             <button class="tab-button" data-tab="matrices">📊 Données en attente</button>
             <button class="tab-button" data-tab="dashboard">📈 Tableau de bord</button>
+            <button class="tab-button" data-tab="prediction">🔮 Prédiction</button>
         </nav>
 
 
@@ -175,6 +178,177 @@
                 <h2>📊 Données en attente de synchronisation</h2>
                 <div id="matrices-list" class="data-list">
                     <div class="loading">⏳ Chargement des données...</div>
+                </div>
+            </div>
+        </div>
+        <!-- ============================================================ -->
+        <!-- ONGLET PRÉDICTION                                             -->
+        <!-- ============================================================ -->
+        <div id="prediction-tab" class="tab-content">
+            <h2>🔮 Prédiction simplifiée</h2>
+            <p>Chargez vos données, choisissez ce que vous voulez prédire, et obtenez des résultats.</p>
+
+            <!-- Étapes -->
+            <div class="card">
+                <h3>📋 Étapes à suivre</h3>
+                <div class="steps">
+                    <div class="step" id="pred-step1">
+                        <div class="number">1</div>
+                        <div class="label">Charger les données</div>
+                    </div>
+                    <div class="step" id="pred-step2">
+                        <div class="number">2</div>
+                        <div class="label">Choisir la cible</div>
+                    </div>
+                    <div class="step" id="pred-step3">
+                        <div class="number">3</div>
+                        <div class="label">Analyser</div>
+                    </div>
+                    <div class="step" id="pred-step4">
+                        <div class="number">4</div>
+                        <div class="label">Prédire</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contrôles -->
+            <div class="card">
+                <h3>🎮 Contrôle</h3>
+
+                <div class="form-group">
+                    <label>📂 Fichier de données :</label>
+                    <select id="pred-dataFile">
+                        <option value="__server__">Serveur (données réelles)</option>
+                        <option value="uds-server/enseignements_classification.json">Enseignements (classification)
+                        </option>
+                        <option value="uds-server/enseignements_train.json">Enseignements (régression)</option>
+                    </select>
+                    <button class="btn btn-primary" id="pred-btn-step1">1. Charger</button>
+                </div>
+
+                <div class="form-group">
+                    <label>🎯 Colonne à prédire :</label>
+                    <select id="pred-targetCol">
+                        <option value="">(Sélectionnez)</option>
+                    </select>
+                    <button class="btn btn-primary" id="pred-btn-step2">2. Choisir</button>
+                </div>
+
+                <div class="form-group">
+                    <label>⚙️ Options avancées :</label>
+                    <label style="min-width:auto;">Arbres :</label>
+                    <input type="number" id="pred-nTrees" value="20" min="5" max="100" style="max-width:70px;">
+                    <label style="min-width:auto;">Profondeur :</label>
+                    <input type="number" id="pred-maxDepth" value="8" min="3" max="20" style="max-width:70px;">
+                    <label style="min-width:auto;">Plis (K) :</label>
+                    <input type="number" id="pred-kFold" value="5" min="2" max="10" style="max-width:60px;">
+                </div>
+                <div class="form-group">
+                    <label> Nom du modèle :</label>
+                    <input type="text" id="pred-model-name" value="modele_par_defaut"
+                        style="flex:1; min-width:150px;" />
+                    <button class="btn btn-info" id="pred-btn-list-models">📋 Lister les modèles</button>
+                </div>
+
+                <div>
+                    <button class="btn btn-success" id="pred-btn-step3">3. Analyser</button>
+                    <button class="btn btn-warning" id="pred-btn-step4">4. Prédire</button>
+                    <button class="btn btn-danger" id="pred-btn-retrain">🔄 Ré-entraîner</button>
+                    <button class="btn btn-info" id="pred-btn-load-model">💾 Charger le modèle sauvegardé</button>
+                    <button class="btn btn-danger" id="pred-btn-delete-model">🗑️ Supprimer le modèle stocké</button>
+                    <div
+                        style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid #ddd;padding-top:10px;">
+                        <button class="btn btn-info" id="pred-btn-charts">📊 Voir les graphiques</button>
+                        <button class="btn btn-purple pred-btn-tree" data-tree="0">🌳 Arbre 1</button>
+                        <button class="btn btn-purple pred-btn-tree" data-tree="1">🌳 Arbre 2</button>
+                        <button class="btn btn-purple pred-btn-tree" data-tree="2">🌳 Arbre 3</button>
+                        <button class="btn btn-success" id="pred-btn-all-trees">🌲 Tous les arbres</button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:15px;border-top:1px solid #ddd;padding-top:15px;">
+                    <label>🔮 Saisir les valeurs à prédire :</label>
+                    <div id="pred-predictionInputs" style="display:flex;flex-wrap:wrap;gap:10px;flex:1;">
+                        <span style="color:#888;">(Chargez les données d'abord)</span>
+                    </div>
+                </div>
+
+                <!-- PHASE 3 : SLIDERS POUR PRÉDICTION SIMPLIFIÉE -->
+                <div class="form-group"
+                    style="margin-top:15px;border-top:1px solid #ddd;padding-top:15px;display:block;">
+                    <label style="display:block;margin-bottom:10px;">🎛️ Prédiction simplifiée (avec sliders)</label>
+                    <div id="pred-sliderContainer" style="display:none;">
+                        <div id="pred-sliderInputs" style="display:flex;flex-wrap:wrap;gap:15px;"></div>
+                        <div style="margin-top:10px;">
+                            <button class="btn btn-success" id="pred-btn-slider-predict">🔮 Prédire avec les
+                                sliders</button>
+                        </div>
+                        <div id="pred-sliderResult" style="margin-top:10px;"></div>
+                    </div>
+                    <div id="pred-sliderPlaceholder" style="color:#888;font-style:italic;">(Analysez les données d'abord
+                        pour voir les sliders)</div>
+                </div>
+            </div>
+
+            <!-- LOGS -->
+            <div class="card">
+                <h3>📋 Journal</h3>
+                <div id="pred-logArea" class="log-area">📌 En attente d'action...</div>
+            </div>
+
+            <!-- RÉSULTATS -->
+            <div class="card">
+                <h3>📊 Résultats</h3>
+                <div id="pred-resultsArea">
+                    <p>Aucun résultat pour l'instant. Suivez les étapes ci-dessus.</p>
+                </div>
+            </div>
+
+            <!-- PRÉDICTION -->
+            <div class="card">
+                <h3>🔮 Résultat de la prédiction</h3>
+                <div id="pred-predictionArea">
+                    <p>Aucune prédiction effectuée.</p>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- GRAPHIQUES AVEC D3.JS                                        -->
+            <!-- ============================================================ -->
+            <div class="card" id="pred-chartsSection" style="display:none;">
+                <h3>📊 Visualisation des données</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                    <div>
+                        <div id="pred-pieChart"
+                            style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+                    </div>
+                    <div>
+                        <div id="pred-barChart"
+                            style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+                    </div>
+                    <div>
+                        <div id="pred-histogramChart"
+                            style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+                    </div>
+                    <div>
+                        <div id="pred-scatterChart"
+                            style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arbre de décision -->
+            <div class="card" id="pred-treeSection" style="display:none;">
+                <h3>🌳 Arbre de décision</h3>
+                <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+                    <button class="btn btn-primary pred-btn-tree" data-tree="0">Arbre 1</button>
+                    <button class="btn btn-primary pred-btn-tree" data-tree="1">Arbre 2</button>
+                    <button class="btn btn-primary pred-btn-tree" data-tree="2">Arbre 3</button>
+                    <button class="btn btn-success" id="pred-btn-all-trees">🌲 Tous les arbres</button>
+                </div>
+                <div id="pred-treeContainer"
+                    style="background:white;border-radius:8px;padding:10px;border:1px solid #eee;min-height:500px;">
+                    <p style="color:#888;text-align:center;padding:40px;">Cliquez sur un arbre pour le visualiser.</p>
                 </div>
             </div>
         </div>
@@ -349,6 +523,17 @@
     <script src="js/tools-3.5.controller.js"></script>
     <script src="js/xlsx.full.min.js"></script>
     <script src="js/FileSaver.min.js"></script>
+    <!-- Prédiction -->
+    <script src="js/tools-3.5.library.Analyser.js"></script>
+    <script src="js/tools-3.5.library.Tree.js"></script>
+    <script src="js/tools-3.5.library.RandomForest.js"></script>
+    <script src="js/tools-3.5.library.ObjectAnalyser.js"></script>
+    <script src="js/tools-3.5.library.MatriceExtension.js"></script>
+    <script src="js/tools-3.5.library.Predictor.js"></script>
+    <script src="js/tools-3.5.library.Visualizer.js"></script>
+    <script src="js/ml-data-source.js"></script>
+    <script src="js/ml-model-idb-store.js"></script>
+    <script src="js/prediction-tab-controller.js"></script>
     <script src="js/app.js"></script>
 
     <script>

@@ -1230,45 +1230,27 @@ function afficherMatrice(matrixId, matrice, columns, filterText, groupBy) {
         groupBy = groupSelect.value;
     }
 
-    // Récupérer les données de la matrice
-    var colonnes = matrice.getColonnes();
+    // Récupérer les lignes
     var lignes = matrice.getLignes();
-    var data = matrice.getDataSet();
+    var colKeys = columns.map(function (c) { return c.key; });
 
-    // ---- Appliquer les filtres ----
+    // Filtrer les lignes
     var filteredLignes = lignes;
-    var filteredData = data;
-
     if (filterText) {
-        var tempLignes = [];
-        var tempData = [];
-
-        for (var i = 0; i < lignes.length; i++) {
-            var ligne = lignes[i];
-            var row = data[i] || [];
-            var match = false;
-
-            for (var j = 0; j < row.length; j++) {
-                var val = row[j];
-                if (val !== null && val !== undefined) {
-                    if (String(val).toLowerCase().indexOf(filterText) !== -1) {
-                        match = true;
-                        break;
+        filteredLignes = lignes.filter(function (ligne) {
+            var rowMap = matrice.getElementsLigneMap(ligne);
+            for (var key in rowMap) {
+                if (rowMap[key] !== null && rowMap[key] !== undefined) {
+                    if (String(rowMap[key]).toLowerCase().indexOf(filterText) !== -1) {
+                        return true;
                     }
                 }
             }
-
-            if (match) {
-                tempLignes.push(ligne);
-                tempData.push(row);
-            }
-        }
-
-        filteredLignes = tempLignes;
-        filteredData = tempData;
+            return false;
+        });
     }
 
-    // ---- Appliquer le regroupement ----
+    // Regroupement
     var groupedData = null;
     var groupHeaders = null;
 
@@ -1284,37 +1266,31 @@ function afficherMatrice(matrixId, matrice, columns, filterText, groupBy) {
                 groupedData[key] = [];
                 groupHeaders.push(key);
             }
-
-            // Récupérer les lignes correspondantes
             for (var l = 0; l < filteredLignes.length; l++) {
-                var ligneName = filteredLignes[l];
-                var val = matrice.getElement(groupBy, ligneName);
+                var ligne = filteredLignes[l];
+                var val = matrice.getElement(groupBy, ligne);
                 if (val === key) {
-                    groupedData[key].push({
-                        ligne: ligneName,
-                        data: filteredData[l] || []
-                    });
+                    groupedData[key].push(ligne);
                 }
             }
         }
         groupHeaders.sort();
     }
 
-    // ---- Construire le HTML ----
+    // Construire le HTML
     var html = '';
-
     if (groupedData) {
         groupHeaders.forEach(function (groupKey) {
             var items = groupedData[groupKey] || [];
             html += '<tr class="group-header"><td colspan="' + columns.length + '">📁 ' + groupBy + ' : ' + groupKey + ' (' + items.length + ')</td></tr>';
-            items.forEach(function (item) {
-                html += renderMatrixRowFromData(item.data, columns);
+            items.forEach(function (ligne) {
+                html += renderMatrixRow(ligne, matrice, colKeys);
             });
         });
     } else {
-        for (var i = 0; i < filteredData.length; i++) {
-            html += renderMatrixRowFromData(filteredData[i], columns);
-        }
+        filteredLignes.forEach(function (ligne) {
+            html += renderMatrixRow(ligne, matrice, colKeys);
+        });
     }
 
     if (html === '') {
@@ -1322,6 +1298,21 @@ function afficherMatrice(matrixId, matrice, columns, filterText, groupBy) {
     }
 
     tbody.innerHTML = html;
+}
+function renderMatrixRow(ligne, matrice, colKeys) {
+    var html = '<tr>';
+    for (var i = 0; i < colKeys.length; i++) {
+        var col = colKeys[i];
+        var value = matrice.getElement(col, ligne);
+        if (value === null || value === undefined) {
+            value = '';
+        } else if (typeof value === 'object') {
+            value = JSON.stringify(value);
+        }
+        html += '<td>' + escapeHtml(String(value)) + '</td>';
+    }
+    html += '</tr>';
+    return html;
 }
 
 // ----------------------------------------------------------
@@ -2037,6 +2028,12 @@ function switchTab(tabName) {
         loadMatrices();
     } else if (tabName === 'dashboard') {
         loadDashboard();
+    } else if (tabName === 'prediction') {
+        if (typeof window.initPredictionTab === 'function') {
+            window.initPredictionTab();
+        } else {
+            console.warn('[app.js] initPredictionTab non défini');
+        }
     }
 }
 
