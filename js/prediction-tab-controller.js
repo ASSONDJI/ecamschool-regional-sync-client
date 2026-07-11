@@ -44,7 +44,7 @@
             success: '✅',
             error: '❌',
             warning: '⚠️'
-        } [type] || '📌';
+        }[type] || '📌';
         var className = 'log-' + type;
         var entry = '[' + timestamp + '] ' + prefix + ' ' + message + '\n';
         var span = document.createElement('span');
@@ -377,6 +377,8 @@
                 log('💡 Le serveur a renvoyé un tableau vide. Vérifiez les données.', 'warning');
             }
         });
+        var previewContainer = document.getElementById('pred-dataPreview');
+        if (previewContainer) previewContainer.style.display = 'none';
     }
 
     /**
@@ -932,21 +934,140 @@
             log('❌ Entraînez d\'abord le modèle.', 'error');
             return;
         }
+        if (!_predictor._matrice) {
+            log('❌ La matrice de données est manquante.', 'error');
+            return;
+        }
+        if (typeof d3 === 'undefined') {
+            log('❌ D3.js n\'est pas chargé.', 'error');
+            return;
+        }
 
         var trees = _predictor._model.trees;
+        var container = document.getElementById('pred-treeContainer');
+        if (!container) {
+            log('❌ Élément #pred-treeContainer introuvable.', 'error');
+            return;
+        }
+        // Vider le conteneur
+        container.innerHTML = '';
+
+        // Nombre d'arbres à afficher (max 5)
+        var maxTrees = 5;
+        var toShow = Math.min(maxTrees, trees.length);
+        if (toShow === 0) {
+            log('⚠️ Aucun arbre à afficher.', 'warning');
+            return;
+        }
+
+        // Nombre de colonnes (2 pour un affichage équilibré)
+        var cols = Math.min(2, toShow);
+
+        // Créer un visualiseur avec la taille de base
+        var visualizer = new tools.Library.Visualizer(_predictor._matrice);
+        visualizer.setSize(800, 500);
+
+        for (var i = 0; i < toShow; i++) {
+            // Conteneur parent pour l'arbre
+            var div = document.createElement('div');
+            div.style.display = 'inline-block';
+            div.style.width = (100 / cols) + '%';
+            div.style.minWidth = '300px';
+            div.style.verticalAlign = 'top';
+            div.style.padding = '5px';
+            div.style.boxSizing = 'border-box';
+
+            // Titre
+            var title = document.createElement('h4');
+            title.style.textAlign = 'center';
+            title.style.fontSize = '14px';
+            title.style.margin = '5px 0';
+            title.textContent = 'Arbre ' + (i + 1) + '/' + trees.length;
+            div.appendChild(title);
+
+            // Sous-conteneur pour D3
+            var subContainer = document.createElement('div');
+            subContainer.style.height = '400px';
+            subContainer.style.overflow = 'auto';
+            var id = 'tree-' + i + '-' + Date.now();
+            subContainer.id = id;
+            div.appendChild(subContainer);
+
+            container.appendChild(div);
+
+            // Dessiner l'arbre
+            try {
+                visualizer.tree(trees[i], '#' + id, { title: false });
+            } catch (e) {
+                log('❌ Erreur sur l\'arbre ' + (i + 1) + ' : ' + e.message, 'error');
+                subContainer.innerHTML = '<p style="color:red; padding:10px;">Erreur : ' + e.message + '</p>';
+            }
+        }
+
+        // Afficher la section
         document.getElementById('pred-treeSection').style.display = 'block';
-
-        var visualizerTree = new tools.Library.Visualizer(_predictor._matrice);
-        visualizerTree.setSize(800, 500);
-        visualizerTree.forest(trees, '#pred-treeContainer', 5, { title: '🌲 Forêt d\'arbres de décision' });
-
-        log('🌲 ' + trees.length + ' arbres visualisés', 'success');
+        log('🌲 ' + toShow + ' arbre(s) visualisé(s) (sur ' + trees.length + ').', 'success');
     }
-
     // ============================================================
     // INITIALISATION DE L'ONGLET
     // ============================================================
 
+    /**
+ * Affiche un aperçu des 5 premières lignes de la matrice de données
+ */
+    function predShowDataPreview() {
+        var previewContainer = document.getElementById('pred-dataPreview');
+        if (!previewContainer) {
+            log('❌ Élément #pred-dataPreview introuvable.', 'error');
+            return;
+        }
+
+        if (!_predictor || !_predictor._matrice) {
+            log('❌ Chargez d\'abord les données (étape 1).', 'error');
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        var matrice = _predictor._matrice;
+        var lignes = matrice.getLignes();
+        var colonnes = matrice.getColonnes();
+
+        if (lignes.length === 0) {
+            log('ℹ️ La matrice ne contient aucune ligne.', 'info');
+            previewContainer.style.display = 'none';
+            return;
+        }
+
+        var nbLignes = Math.min(5, lignes.length);
+        var html = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        html += '<thead><tr style="background:#e9ecef;">';
+        // En-têtes
+        colonnes.forEach(function (col) {
+            html += '<th style="border:1px solid #ccc; padding:6px 8px; text-align:left;">' + escapeHtml(col) + '</th>';
+        });
+        html += '</tr></thead><tbody>';
+
+        // Lignes
+        for (var i = 0; i < nbLignes; i++) {
+            var rowName = lignes[i];
+            html += '<tr>';
+            colonnes.forEach(function (col) {
+                var val = matrice.getElement(col, rowName);
+                var display = (val === null || val === undefined) ? '' : String(val);
+                html += '<td style="border:1px solid #ccc; padding:4px 8px;">' + escapeHtml(display) + '</td>';
+            });
+            html += '</tr>';
+        }
+
+        html += '</tbody></table>';
+
+        // Ajouter un petit résumé
+        var summary = '<p><strong>' + lignes.length + ' lignes</strong> · ' + colonnes.length + ' colonnes · affichage des ' + nbLignes + ' premières lignes.</p>';
+        previewContainer.innerHTML = summary + html;
+        previewContainer.style.display = 'block';
+
+        log('📋 Aperçu des données affiché (' + nbLignes + ' lignes).', 'success');
+    }
     function initPredictionTab() {
         if (_initialized) {
             return;
@@ -976,6 +1097,7 @@
         document.getElementById('pred-btn-charts')?.addEventListener('click', predShowCharts);
         document.getElementById('pred-btn-all-trees')?.addEventListener('click', predShowAllTrees);
         document.getElementById('pred-btn-slider-predict')?.addEventListener('click', predRunSliderPredict);
+        document.getElementById('pred-btn-preview')?.addEventListener('click', predShowDataPreview);
 
         // Boutons "Arbre 1/2/3"
         document.querySelectorAll('.pred-btn-tree').forEach(function (btn) {
