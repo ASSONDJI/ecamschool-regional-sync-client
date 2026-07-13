@@ -51,6 +51,19 @@ function escapeHtml(str) {
 }
 
 // ----------------------------------------------------------
+// confirmAsync()
+// Rôle : demander une confirmation à l'utilisateur.
+//        Utilise la modale stylée (js/ui-enhancements.js) si
+//        elle est chargée, sinon retombe sur confirm() natif.
+// ----------------------------------------------------------
+function confirmAsync(message) {
+    if (typeof window.confirmDialog === 'function') {
+        return window.confirmDialog(message);
+    }
+    return Promise.resolve(window.confirm(message));
+}
+
+// ----------------------------------------------------------
 // showMessage()
 // Rôle : afficher un message temporaire à l'écran.
 // ----------------------------------------------------------
@@ -226,47 +239,47 @@ function createUser() {
 // ★ MODIFICATION : Attendre la notification CACHE_UPDATED
 // ----------------------------------------------------------
 function deleteUser(id) {
-    if (!confirm('Supprimer définitivement cet utilisateur ?')) {
-        return;
-    }
+    confirmAsync('Supprimer définitivement cet utilisateur ?').then(function (ok) {
+        if (!ok) return;
 
-    // ★ AJOUT : Indicateur pour savoir si la notification a été reçue
-    var cacheUpdatedReceived = false;
+        // ★ AJOUT : Indicateur pour savoir si la notification a été reçue
+        var cacheUpdatedReceived = false;
 
-    // ★ AJOUT : Écouteur temporaire pour CACHE_UPDATED
-    var onCacheUpdated = function (event) {
-        if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'User') {
-            cacheUpdatedReceived = true;
-            console.log("[app.js] CACHE_UPDATED reçu pour User - rechargement...");
-            loadUsers();
-            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
-        }
-    };
-    navigator.serviceWorker.addEventListener('message', onCacheUpdated);
-
-    apiRequest('/users', 'DELETE', { id: id }).then(function (reponse) {
-        if (reponse && reponse.queued) {
-            showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
-        } else {
-            showMessage('Utilisateur supprimé avec succès !');
-        }
-        updateSyncBadge();
-
-        // ★ MODIFICATION : NE PAS APPELER loadUsers() ici
-        // loadUsers(); ← SUPPRIMER CETTE LIGNE
-
-        // ★ AJOUT : Fallback si la notification n'arrive pas dans les 2 secondes
-        setTimeout(function () {
-            if (!cacheUpdatedReceived) {
-                console.log("[app.js] Fallback - rechargement forcé après délai.");
+        // ★ AJOUT : Écouteur temporaire pour CACHE_UPDATED
+        var onCacheUpdated = function (event) {
+            if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'User') {
+                cacheUpdatedReceived = true;
+                console.log("[app.js] CACHE_UPDATED reçu pour User - rechargement...");
                 loadUsers();
                 navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
             }
-        }, 2000);
-    }).catch(function (error) {
-        showMessage('Erreur suppression : ' + error, 'error');
-        navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
-        loadUsers();
+        };
+        navigator.serviceWorker.addEventListener('message', onCacheUpdated);
+
+        apiRequest('/users', 'DELETE', { id: id }).then(function (reponse) {
+            if (reponse && reponse.queued) {
+                showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
+            } else {
+                showMessage('Utilisateur supprimé avec succès !');
+            }
+            updateSyncBadge();
+
+            // ★ MODIFICATION : NE PAS APPELER loadUsers() ici
+            // loadUsers(); ← SUPPRIMER CETTE LIGNE
+
+            // ★ AJOUT : Fallback si la notification n'arrive pas dans les 2 secondes
+            setTimeout(function () {
+                if (!cacheUpdatedReceived) {
+                    console.log("[app.js] Fallback - rechargement forcé après délai.");
+                    loadUsers();
+                    navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+                }
+            }, 2000);
+        }).catch(function (error) {
+            showMessage('Erreur suppression : ' + error, 'error');
+            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+            loadUsers();
+        });
     });
 }
 
@@ -333,7 +346,7 @@ function loadUsers() {
         container.innerHTML = users.map(function (user) {
             return '<div class="data-item" data-id="' + escapeHtml(user.id) + '">' +
                 '<strong>' + escapeHtml(user.username) + '</strong> - ' + escapeHtml(user.fullName) + '<br>' +
-                escapeHtml(user.email) + ' | ' + escapeHtml(user.role) +
+                escapeHtml(user.email) + ' <span class="role-badge role-' + escapeHtml(user.role) + '">' + escapeHtml(user.role) + '</span>' +
                 '<br><small>ID: ' + user.id + '</small>' +
                 '<div style="margin-top:8px;">' +
                 '   <button class="btn-user-edit" data-id="' + escapeHtml(user.id) +
@@ -411,41 +424,41 @@ function createEstablishment() {
 // ★ MODIFICATION : Attendre la notification CACHE_UPDATED
 // ----------------------------------------------------------
 function deleteEstablishment(id) {
-    if (!confirm('Supprimer définitivement cet établissement ?')) {
-        return;
-    }
+    confirmAsync('Supprimer définitivement cet établissement ?').then(function (ok) {
+        if (!ok) return;
 
-    var cacheUpdatedReceived = false;
+        var cacheUpdatedReceived = false;
 
-    var onCacheUpdated = function (event) {
-        if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'Establishment') {
-            cacheUpdatedReceived = true;
-            console.log("[app.js] CACHE_UPDATED reçu pour Establishment - rechargement...");
-            loadEstablishments();
-            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
-        }
-    };
-    navigator.serviceWorker.addEventListener('message', onCacheUpdated);
-
-    apiRequest('/establishments', 'DELETE', { id: id }).then(function (reponse) {
-        if (reponse && reponse.queued) {
-            showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
-        } else {
-            showMessage('Établissement supprimé avec succès !');
-        }
-        updateSyncBadge();
-
-        setTimeout(function () {
-            if (!cacheUpdatedReceived) {
-                console.log("[app.js] Fallback - rechargement forcé après délai.");
+        var onCacheUpdated = function (event) {
+            if (event.data && event.data.type === 'CACHE_UPDATED' && event.data.table === 'Establishment') {
+                cacheUpdatedReceived = true;
+                console.log("[app.js] CACHE_UPDATED reçu pour Establishment - rechargement...");
                 loadEstablishments();
                 navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
             }
-        }, 2000);
-    }).catch(function (error) {
-        showMessage('Erreur suppression : ' + error, 'error');
-        navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
-        loadEstablishments();
+        };
+        navigator.serviceWorker.addEventListener('message', onCacheUpdated);
+
+        apiRequest('/establishments', 'DELETE', { id: id }).then(function (reponse) {
+            if (reponse && reponse.queued) {
+                showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
+            } else {
+                showMessage('Établissement supprimé avec succès !');
+            }
+            updateSyncBadge();
+
+            setTimeout(function () {
+                if (!cacheUpdatedReceived) {
+                    console.log("[app.js] Fallback - rechargement forcé après délai.");
+                    loadEstablishments();
+                    navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+                }
+            }, 2000);
+        }).catch(function (error) {
+            showMessage('Erreur suppression : ' + error, 'error');
+            navigator.serviceWorker.removeEventListener('message', onCacheUpdated);
+            loadEstablishments();
+        });
     });
 }
 
@@ -509,7 +522,7 @@ function loadEstablishments() {
         container.innerHTML = establishments.map(function (eco) {
             return '<div class="data-item" data-id="' + escapeHtml(eco.id) + '">' +
                 '<strong>' + escapeHtml(eco.name) + '</strong> (' + escapeHtml(eco.code) + ')<br>' +
-                escapeHtml(eco.city) + ' - ' + escapeHtml(eco.type) +
+                escapeHtml(eco.city) + ' <span class="role-badge role-' + escapeHtml(eco.type) + '">' + escapeHtml(eco.type) + '</span>' +
                 '<br><small>ID: ' + eco.id + '</small>' +
                 '<div style="margin-top:8px;">' +
                 '   <button class="btn-establishment-edit" data-id="' + escapeHtml(eco.id) +
@@ -629,23 +642,23 @@ function updateMatrix(editingId, editingLocalId) {
 // Rôle : supprimer une donnée existante
 // ----------------------------------------------------------
 function deleteMatrix(id, localId) {
-    if (!confirm('Supprimer définitivement cet enregistrement ?')) {
-        return;
-    }
+    confirmAsync('Supprimer définitivement cet enregistrement ?').then(function (ok) {
+        if (!ok) return;
 
-    const deleteId = id && id !== 'null' ? parseInt(id) : null;
-    const data = deleteId ? { id: deleteId } : { _localId: localId };
+        const deleteId = id && id !== 'null' ? parseInt(id) : null;
+        const data = deleteId ? { id: deleteId } : { _localId: localId };
 
-    apiRequest('/data-matrix', 'DELETE', data).then(function (reponse) {
-        if (reponse && reponse.queued) {
-            showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
-        } else {
-            showMessage('Enregistrement supprimé avec succès !');
-        }
-        updateSyncBadge();
-        loadMatrices();
-    }).catch(function (error) {
-        showMessage('Erreur suppression : ' + error, 'error');
+        apiRequest('/data-matrix', 'DELETE', data).then(function (reponse) {
+            if (reponse && reponse.queued) {
+                showMessage('Hors ligne — suppression en attente de synchronisation.', 'warning');
+            } else {
+                showMessage('Enregistrement supprimé avec succès !');
+            }
+            updateSyncBadge();
+            loadMatrices();
+        }).catch(function (error) {
+            showMessage('Erreur suppression : ' + error, 'error');
+        });
     });
 }
 
@@ -654,46 +667,46 @@ function deleteMatrix(id, localId) {
 // Rôle : Annuler une opération en attente (supprimer de _pending)
 // ----------------------------------------------------------
 function deletePending(localId) {
-    if (!confirm('Annuler cette opération en attente ? La donnée ne sera pas synchronisée.')) {
-        return;
-    }
+    confirmAsync('Annuler cette opération en attente ? La donnée ne sera pas synchronisée.').then(function (ok) {
+        if (!ok) return;
 
-    console.log("[app.js] deletePending() — suppression de _localId:", localId);
+        console.log("[app.js] deletePending() — suppression de _localId:", localId);
 
-    let request = indexedDB.open("ecamschool_idb", 6);
+        let request = indexedDB.open("ecamschool_idb", 6);
 
-    request.onsuccess = function (event) {
-        let db = event.target.result;
+        request.onsuccess = function (event) {
+            let db = event.target.result;
 
-        if (!db.objectStoreNames.contains("_pending")) {
-            db.close();
-            showMessage('Aucune donnée en attente.', 'warning');
-            return;
-        }
+            if (!db.objectStoreNames.contains("_pending")) {
+                db.close();
+                showMessage('Aucune donnée en attente.', 'warning');
+                return;
+            }
 
-        let tx = db.transaction(["_pending"], "readwrite");
-        let store = tx.objectStore("_pending");
-        let deleteReq = store.delete(parseInt(localId));
+            let tx = db.transaction(["_pending"], "readwrite");
+            let store = tx.objectStore("_pending");
+            let deleteReq = store.delete(parseInt(localId));
 
-        deleteReq.onsuccess = function () {
-            console.log("[app.js] deletePending() — entrée supprimée :", localId);
-            showMessage('Opération annulée avec succès.', 'success');
-            db.close();
-            updateSyncBadge();
-            loadMatrices();
+            deleteReq.onsuccess = function () {
+                console.log("[app.js] deletePending() — entrée supprimée :", localId);
+                showMessage('Opération annulée avec succès.', 'success');
+                db.close();
+                updateSyncBadge();
+                loadMatrices();
+            };
+
+            deleteReq.onerror = function (event) {
+                console.error("[app.js] deletePending() — erreur :", event.target.error);
+                showMessage('Erreur lors de l\'annulation.', 'error');
+                db.close();
+            };
         };
 
-        deleteReq.onerror = function (event) {
-            console.error("[app.js] deletePending() — erreur :", event.target.error);
-            showMessage('Erreur lors de l\'annulation.', 'error');
-            db.close();
+        request.onerror = function (event) {
+            console.warn("[app.js] deletePending() — IndexedDB non accessible :", event.target.error);
+            showMessage('Erreur de connexion à IndexedDB.', 'error');
         };
-    };
-
-    request.onerror = function (event) {
-        console.warn("[app.js] deletePending() — IndexedDB non accessible :", event.target.error);
-        showMessage('Erreur de connexion à IndexedDB.', 'error');
-    };
+    });
 }
 
 // ----------------------------------------------------------
@@ -1124,6 +1137,11 @@ function loadDashboard() {
             var total = users.length + establishments.length + enseignements.length;
             var badge = document.getElementById('dashboard-badge');
             if (badge) badge.textContent = total + " enregistrements";
+
+            // ★ AJOUT : mise à jour des cartes KPI (js/ui-enhancements.js)
+            if (typeof window.updateDashboardKPIs === 'function') {
+                window.updateDashboardKPIs(users.length, establishments.length, enseignements.length);
+            }
 
             showDashboardMessage("Données chargées avec succès !", "success");
         })

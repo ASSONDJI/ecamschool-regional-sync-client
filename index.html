@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Camschool Regional Sync</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏫</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
@@ -13,7 +16,12 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏫 E-Camschool Regional Sync</h1>
+            <button id="theme-toggle" class="theme-toggle" type="button" title="Basculer le thème"
+                aria-label="Passer en thème sombre">
+                <span class="theme-icon-sun">☀️</span>
+                <span class="theme-icon-moon">🌙</span>
+            </button>
+            <h1><span class="seal">🏫</span> E-Camschool Regional Sync</h1>
             <p>Délégation Régionale du Centre - Synchronisation des données</p>
         </header>
 
@@ -367,6 +375,30 @@
             <!-- Message d'information -->
             <div id="dashboard-message" class="message" style="display:none;"></div>
 
+            <!-- Cartes KPI -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">👤</div>
+                    <div class="kpi-value" id="kpi-users">0</div>
+                    <div class="kpi-label">Utilisateurs</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🏛️</div>
+                    <div class="kpi-value" id="kpi-establishments">0</div>
+                    <div class="kpi-label">Établissements</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">📚</div>
+                    <div class="kpi-value" id="kpi-enseignements">0</div>
+                    <div class="kpi-label">Enseignements</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">⏳</div>
+                    <div class="kpi-value" id="kpi-pending">0</div>
+                    <div class="kpi-label">En attente de sync</div>
+                </div>
+            </div>
+
             <!-- Contrôles globaux -->
             <div class="dashboard-controls">
                 <button id="refresh-dashboard" class="btn-refresh">🔄 Rafraîchir</button>
@@ -540,6 +572,7 @@
     <script src="js/ml-model-idb-store.js"></script>
     <script src="js/prediction-tab-controller.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/ui-enhancements.js"></script>
 
     <script>
         $(document).ready(function () {
