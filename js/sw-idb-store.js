@@ -29,7 +29,7 @@
 const IdbStore = (function () {
 
     const DB_NAME = "ecamschool_idb";
-    const DB_VERSION = 6;
+    const DB_VERSION = 7;
     const CACHE_TTL = 5 * 60 * 1000; // 5 minutes en millisecondes
 
     let dbPromise = null;

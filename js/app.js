@@ -122,7 +122,7 @@ function apiRequest(endpoint, method, data) {
 function updateSyncBadge() {
 
     // Version 6 : alignée avec sw-idb-store.js
-    let request = indexedDB.open("ecamschool_idb", 6);
+    let request = indexedDB.open("ecamschool_idb", 7);
 
     request.onsuccess = function (event) {
         let db = event.target.result;
@@ -660,7 +660,7 @@ function deletePending(localId) {
 
     console.log("[app.js] deletePending() — suppression de _localId:", localId);
 
-    let request = indexedDB.open("ecamschool_idb", 6);
+    let request = indexedDB.open("ecamschool_idb", 7);
 
     request.onsuccess = function (event) {
         let db = event.target.result;
@@ -704,7 +704,7 @@ function deletePending(localId) {
 function editPending(localId, table) {
     console.log("[app.js] editPending() — localId:", localId, "| table:", table);
 
-    let request = indexedDB.open("ecamschool_idb", 6);
+    let request = indexedDB.open("ecamschool_idb", 7);
 
     request.onsuccess = function (event) {
         let db = event.target.result;
@@ -854,7 +854,7 @@ function updatePendingRecord(table, localId) {
             return;
     }
 
-    let request = indexedDB.open("ecamschool_idb", 6);
+    let request = indexedDB.open("ecamschool_idb", 7);
 
     request.onsuccess = function (event) {
         let db = event.target.result;
@@ -946,7 +946,7 @@ function loadMatrices() {
     console.log("[app.js] loadMatrices() appelée");
 
     // 1. Lire directement depuis IndexedDB
-    let request = indexedDB.open("ecamschool_idb", 6);
+    let request = indexedDB.open("ecamschool_idb", 7);
 
     request.onsuccess = function (event) {
         let db = event.target.result;
